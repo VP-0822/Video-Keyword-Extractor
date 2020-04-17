@@ -1,0 +1,26 @@
+Batch size is for 5 videos
+(Refer: useful 
+	1. https://datascience.stackexchange.com/questions/26366/training-an-rnn-with-examples-of-different-lengths-in-keras
+	2. https://stackoverflow.com/questions/38189070/how-do-i-create-a-variable-length-input-lstm-in-keras
+)
+
+For captions:
+-------------------
+	If embedding dimension is 200
+	and one captions has maximum of 35 words
+	and batch size is 5
+	
+Input shape => (5, 35, 200)
+	If LSTM of 512 units
+Output shape => (5, 512)
+
+
+For Videos:
+-------------------
+	If fixed frame number is 40
+	and frame features are 2048
+	and batch size is 5
+
+Input shape => (5, 40, 2048)
+	If LSTM of 512 units
+Output shape => (5, 512)
