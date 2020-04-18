@@ -16,7 +16,7 @@ import config
 import captionPreprocess as cp
 import gloveEmbeddings as ge
 
-def prepareDataset(no_samples=15, test_size=0.2, video_ids=None):
+def prepareDataset(no_samples=100, test_size=0.2, video_ids=None):
     video_frames = vff.loadVideoFrameFeatures(config.PICKLE_FILE_PATH, no_samples, video_ids)
     print('video frame features loaded')
     final_video_ids = list(video_frames.keys())
@@ -101,12 +101,18 @@ def dataGenerator(training_set, wordtoidx, max_caption_length, num_videos_per_ba
             single_video_captions = values[1]
             video_id = key
             for caption_item in single_video_captions:
-                index_seq = [wordtoidx[word] for word in caption_item.split(' ') if word in wordtoidx]
-                in_seq = pad_sequences([index_seq], maxlen=max_caption_length)[0]
+                in_caption_item = f'{cp.START_KEYWORD} {caption_item}'
+                in_seq = [wordtoidx[word] for word in in_caption_item.split(' ') if word in wordtoidx]
+                for i in range(max_caption_length-len(in_seq)):
+                    in_seq.append(wordtoidx[cp.NONE_KEYWORD])
+
+                out_caption_item = f'{caption_item} {cp.STOP_KEYWORD}'
+                out_caption_seq = [wordtoidx[word] for word in out_caption_item.split(' ') if word in wordtoidx]
+                for i in range(max_caption_length-len(out_caption_seq)):
+                    out_caption_seq.append(wordtoidx[cp.NONE_KEYWORD])
                 out_seq = list()
-                dummy_pad_count = max_caption_length - len(index_seq)
                 for count in range(max_caption_length):
-                    out_seq.append(to_categorical([in_seq[count]], num_classes=vocab_size)[0])
+                    out_seq.append(to_categorical([out_caption_seq[count]], num_classes=vocab_size)[0])
                 x1.append(in_seq)
                 x2.append(frame_features)
                 y.append(out_seq)
@@ -187,7 +193,7 @@ if __name__ == "__main__":
     train_generator = dataGenerator(train_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 1, VOCAB_SIZE)
     if not os.path.exists(config.TRAINED_MODEL_HDF5_FILE):
         applyEmbeddingsAndCompile(final_model, vocab_word_embeddings)
-        final_model.fit_generator(train_generator, steps_per_epoch=12, epochs=10,
+        final_model.fit_generator(train_generator, steps_per_epoch=80, epochs=15,
                                  verbose=1,
                                  initial_epoch=0, callbacks=[BasicModelCallback()])
         final_model.save_weights(config.TRAINED_MODEL_HDF5_FILE)
@@ -196,4 +202,4 @@ if __name__ == "__main__":
     else:
         final_model.load_weights(config.TRAINED_MODEL_HDF5_FILE)
         print('Trained model weights exported')
-    predictFromModel(final_model, train_samples_list[0], caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)
+    predictFromModel(final_model, test_samples_list[0], caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)

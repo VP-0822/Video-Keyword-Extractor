@@ -12,7 +12,7 @@ class CaptionPreprocessor:
         self.captionCleanup = captionCleanup
         if self.captionCleanup is True:
             self.cleanupCaptions()
-        self.appendStartStop()
+        #self.appendStartStop()
         self.extractWordList()
         self.filterMostOccuringWords()
         self.createWordIndexDictionary()
