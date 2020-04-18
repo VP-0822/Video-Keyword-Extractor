@@ -4,6 +4,10 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam, RMSprop
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.backend import concatenate
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.utils import to_categorical
+from keras import callbacks
+import os
 import numpy as np
 import math
 import videoFrameFeatures as vff
@@ -12,8 +16,8 @@ import config
 import captionPreprocess as cp
 import gloveEmbeddings as ge
 
-def prepareDataset(no_samples=15, test_size=0.2):
-    video_frames = vff.loadVideoFrameFeatures(config.PICKLE_FILE_PATH, no_samples)
+def prepareDataset(no_samples=15, test_size=0.2, video_ids=None):
+    video_frames = vff.loadVideoFrameFeatures(config.PICKLE_FILE_PATH, no_samples, video_ids)
     print('video frame features loaded')
     video_ids = list(video_frames.keys())
     video_captions = y2tc.filterCaptionsForSamples(config.CSV_FILE_PATH,video_ids)
@@ -39,12 +43,12 @@ def prepareDataset(no_samples=15, test_size=0.2):
     
     return train_samples, test_samples, caption_preprocessor, vocab_word_embeddings
 
-def getBasicModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab_size):
+def getBasicModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab_size, embedding_weights=None):
     # Caption input shape is (Captionlen+1, Outputembeddeding_dimension) i.e. (16, 300)
     # And when we fit, we will do it in batches so currently batch dimension will be (None, 16, 300)
 
     cmodel_input = Input(shape=(final_caption_length,), name='caption_input')
-    cmodel_embedding = Embedding(final_caption_length, embedding_dim, mask_zero=True, name='caption_embedding') (cmodel_input)
+    cmodel_embedding = Embedding(total_vocab_size, embedding_dim, mask_zero=True, name='caption_embedding') (cmodel_input)
     cmodel_dense = TimeDistributed(Dense(512,kernel_initializer='random_normal')) (cmodel_embedding)
     cmodel_dropout = TimeDistributed(Dropout(0.50)) (cmodel_dense)
     cmodel_lstm = LSTM(512, return_sequences=True,kernel_initializer='random_normal') (cmodel_dropout)
@@ -70,52 +74,111 @@ def getBasicModel(final_caption_length, embedding_dim, video_frame_shape, total_
     # using default optimizer and loss function
     final_model = Model(inputs=[cmodel_input, imodel_input], outputs= [combined_model_outputs])
     optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-8, decay=0)
+
+    if embedding_weights is not None:
+        print('embedding weights found. Set layer to non-trainable')
+        final_model.layers[4].set_weights([embedding_weights])
+        final_model.layers[4].trainable = False
     final_model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
     final_model.summary()
+    print('Model compiled successfully')
+    return final_model
 
-# def dataGenerator(training_set, wordtoidx, max_length, num_videos_per_batch):
-#     # x1 - Training data for videos
-#     # x2 - The caption that goes with each photo
-#     # y - The predicted rest of the caption
-#     x1, x2, y = [], [], []
-#     n=0
-#     while True:
-#         for key, values in training_set:
-#             frame_features = values[0]
-#             caption_vector = values[1]
-#             video_id = key
+def dataGenerator(training_set, wordtoidx, max_caption_length, num_videos_per_batch, vocab_size):
+    # x1 - Training data for videos
+    # x2 - The caption that goes with each photo
+    # y - The predicted rest of the caption
+    x1, x2, y = [], [], []
+    current_batch_item_count=0
+    while True:
+        for key, values in training_set.items():
+            current_batch_item_count+=1
+            frame_features = values[0]
+            single_video_captions = values[1]
+            video_id = key
+            for caption_item in single_video_captions:
+                index_seq = [wordtoidx[word] for word in caption_item.split(' ') if word in wordtoidx]
+                in_seq = pad_sequences([index_seq], maxlen=max_caption_length)[0]
+                out_seq = list()
+                dummy_pad_count = max_caption_length - len(index_seq)
+                for count in range(max_caption_length):
+                    out_seq.append(to_categorical([in_seq[count]], num_classes=vocab_size)[0])
+                x1.append(in_seq)
+                x2.append(frame_features)
+                y.append(out_seq)
+            if current_batch_item_count==num_videos_per_batch:
+                yield ([np.array(x1), np.array(x2)], np.array(y))
+                x1, x2, y = [], [], []
+                current_batch_item_count=0
 
+def predictFromModel(model, video_sample, wordtoidx, idxtoword, max_caption_length):
+    video_frame_input = video_sample[0]
+    original_video_caption_input = video_sample[1][0]
+    dummy_caption = cp.START_KEYWORD
+    video_dummy_caption = [wordtoidx[word] for word in dummy_caption.split(' ') if word in wordtoidx]
+    input_sequence = pad_sequences([video_dummy_caption], maxlen=max_caption_length) [0]
+    print(len(input_sequence))
+    captionoutput = model.predict([input_sequence, video_frame_input])
+    print('Prediction done!')
+    print(captionoutput.shape)
+    # yhat = np.argmax(yhat)
+    # word = idxtoword[yhat]
+    # in_text += ' ' + word
+    # if word == cp.STOP_KEYWORD:
+    #     break
 
-
-#     while True:
-#         for key, desc_list in training_captions.items():
-#             n+=1
-#             photo = photos[key+'.jpg']
-#             # Each photo has 5 descriptions
-#             for desc in desc_list:
-#                 # Convert each word into a list of sequences.
-#                 seq = [wordtoidx[word] for word in desc.split(' ') if word in wordtoidx]
-#                 # Generate a training case for every possible sequence and outcome
-#                 for i in range(1, len(seq)):
-#                     in_seq, out_seq = seq[:i], seq[i]
-#                     in_seq = pad_sequences([in_seq], maxlen=max_length)[0]
-#                     out_seq = to_categorical([out_seq], num_classes=vocab_size)[0]
-#                     x1.append(photo)
-#                     x2.append(in_seq)
-#                     y.append(out_seq)
-#                 if n==num_photos_per_batch:
-#                     yield ([np.array(x1), np.array(x2)], np.array(y))
-#                     x1, x2, y = [], [], []
-#                     n=0
+class BasicModelCallback(callbacks.Callback):
+    def __init__(self):
+        pass
+    def on_epoch_end(self, epoch, logs={}):
+        print("Epoch %d End " % epoch)
+        loss = logs['loss']
+        # acc  = logs['acc']
+        #valloss = logs['val_loss']
+        #valacc  = logs['val_acc']
+        print('Epoch Training loss: ' + str(loss))
+        # print('Epoch Training Accuracy: ' + str(acc))
+        print('=========================================')
+    
+    def on_batch_end(self, batch, logs={}):
+        print("Batch %d ends" % batch)
+        loss = logs['loss']
+        # acc  = logs['acc']
+        print('Batch Training loss: ' + str(loss))
+        # print('Batch Training Accuracy: ' + str(acc))
 
 if __name__ == "__main__":
-    train_samples, test_samples, caption_preprocessor, vocab_word_embeddings = prepareDataset()
-    print(train_samples.keys())
-    print(test_samples.keys())
+    video_ids = None
+    if os.path.exists(config.TRAINED_VIDEO_ID_NPY_FILE):
+        video_ids = np.load(config.TRAINED_VIDEO_ID_NPY_FILE)
+        print('video_ids loaded')
+        print(video_ids)
+    train_samples, test_samples, caption_preprocessor, vocab_word_embeddings = prepareDataset(video_ids=video_ids)
+    # print(train_samples.keys())
+    # print(test_samples.keys())
+    train_video_ids = list(train_samples.keys())
     train_samples_list = list(train_samples.values())
-    print(train_samples_list[0][1])
+    test_samples_list = list(test_samples.values())
+    # print(train_samples_list[0][1])
     CAPTION_LEN = caption_preprocessor.caption_max_length
     OUTDIM_EMB = 200
     video_frame_input_shape = (None,2048)
     VOCAB_SIZE = caption_preprocessor.getVocabSize() + 1
-    #final_model = getBasicModel(CAPTION_LEN +1, OUTDIM_EMB, video_frame_input_shape, VOCAB_SIZE)
+    print('Caption len : ' + str(CAPTION_LEN))
+    print('Vocab size : ' + str(VOCAB_SIZE))
+    print('Embedding weight matrix shape: ' + str(vocab_word_embeddings.shape))
+
+    final_model = getBasicModel(CAPTION_LEN + 1, OUTDIM_EMB, video_frame_input_shape, VOCAB_SIZE, vocab_word_embeddings)
+    print('Starting training......')
+    train_generator = dataGenerator(train_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 1, VOCAB_SIZE)
+    if not os.path.exists(config.TRAINED_MODEL_HDF5_FILE):
+        final_model.fit_generator(train_generator, steps_per_epoch=12, epochs=10,
+                                 verbose=1,
+                                 initial_epoch=0, callbacks=[BasicModelCallback()])
+        final_model.save_weights(config.TRAINED_MODEL_HDF5_FILE)
+        train_video_ids_np = np.asarray(train_video_ids)
+        np.save(config.TRAINED_VIDEO_ID_NPY_FILE, train_video_ids_np)
+    else:
+        final_model.load_weights(config.TRAINED_MODEL_HDF5_FILE)
+        print('Trained model weights exported')
+    predictFromModel(final_model, test_samples_list[0], caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)

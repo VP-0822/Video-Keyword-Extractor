@@ -8,7 +8,7 @@ def loadPickleFile(pickleFilePath):
         all_videos = pickle.load(fp)
         return all_videos
 
-def loadVideoFrameFeatures(pickleFilePath, numberOfVideos=None):
+def loadVideoFrameFeatures(pickleFilePath, numberOfVideos=None, video_ids=None):
     all_videos_frames = loadPickleFile(pickleFilePath)
     if numberOfVideos is None:
         return all_videos_frames
@@ -18,6 +18,10 @@ def loadVideoFrameFeatures(pickleFilePath, numberOfVideos=None):
     for index, video_id in enumerate(all_video_ids):
         if index is numberOfVideos:
             break
+        if video_ids is not None:
+            if video_id in video_ids:
+                random_videos_frames[video_id] = all_videos_frames[video_id]
+            continue
         random_videos_frames[video_id] = all_videos_frames[video_id]
     return random_videos_frames
 

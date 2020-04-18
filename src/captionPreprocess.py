@@ -69,7 +69,7 @@ class CaptionPreprocessor:
             self.word_to_index[word] = index
             index += 1
 
-        # adding 1 to word_list length to align with word indexs used for mapping
+        # adding 1 to vocab size as we have 0 index reserved for dummy values
         self.final_vocab_size = len(self.index_to_word) + 1
 
     def getVocabSize(self):
