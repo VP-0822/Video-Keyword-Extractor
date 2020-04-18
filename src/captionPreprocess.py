@@ -1,7 +1,8 @@
 import string
 
-START_KEYWORD = 'STARTSEQ'
-STOP_KEYWORD = 'STOPSEQ'
+START_KEYWORD = '>'
+STOP_KEYWORD = '<'
+NONE_KEYWORD = '?!?'
 punctuation_mapping = str.maketrans('', '', string.punctuation)
 
 class CaptionPreprocessor:
@@ -57,20 +58,28 @@ class CaptionPreprocessor:
                 self.words_occurance_count[word] = self.words_occurance_count.get(word, 0) + 1
 
     def filterMostOccuringWords(self):
-        self.final_captions_vocab = [w for w in self.words_occurance_count if self.words_occurance_count[w] >= self.word_freq_threshold]
+        actual_word_vocab = [w for w in self.words_occurance_count if self.words_occurance_count[w] >= self.word_freq_threshold]
+        self.final_captions_vocab = list()
+        self.final_captions_vocab.append(START_KEYWORD)
+        self.final_captions_vocab.append(STOP_KEYWORD)
+        self.final_captions_vocab.append(NONE_KEYWORD)
+        for word in actual_word_vocab:
+            if word in [NONE_KEYWORD, START_KEYWORD, STOP_KEYWORD]:
+                continue
+            self.final_captions_vocab.append(word)
 
     def createWordIndexDictionary(self):
         self.index_to_word = dict()
         self.word_to_index = dict()
 
-        index = 1
+        index = 0
         for word in self.final_captions_vocab:
             self.index_to_word[index] = word
             self.word_to_index[word] = index
             index += 1
 
         # adding 1 to vocab size as we have 0 index reserved for dummy values
-        self.final_vocab_size = len(self.index_to_word) + 1
+        self.final_vocab_size = len(self.index_to_word)
 
     def getVocabSize(self):
         return self.final_vocab_size
