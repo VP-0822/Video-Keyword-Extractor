@@ -125,7 +125,7 @@ def predictFromModel(model, video_sample, wordtoidx, idxtoword, max_caption_leng
     video_frame_input = video_sample[0]
     original_video_caption_input = video_sample[1][0]
     dummy_caption = [cp.START_KEYWORD]
-    dummy_caption.extend([cp.NONE_KEYWORD] * (max_caption_length - 1))
+    dummy_caption.extend([cp.STOP_KEYWORD] * (max_caption_length - 1))
     video_dummy_caption = [wordtoidx[word] for word in dummy_caption if word in wordtoidx]
     print(video_dummy_caption)
     input_sequence = pad_sequences([video_dummy_caption], maxlen=max_caption_length)
@@ -135,8 +135,8 @@ def predictFromModel(model, video_sample, wordtoidx, idxtoword, max_caption_leng
     print(captionoutput.shape)
     print(wordtoidx[cp.START_KEYWORD])
     print(wordtoidx[cp.STOP_KEYWORD])
-    print(captionoutput[0][3][0])
-    print(captionoutput[0][3][1])
+    print(np.argmax(captionoutput[0][3]))
+    print(np.argmax(captionoutput[0][7]))
     in_text = ''
     for oneword in captionoutput[0]:
         yhat = np.argmax(oneword)
@@ -202,4 +202,4 @@ if __name__ == "__main__":
     else:
         final_model.load_weights(config.TRAINED_MODEL_HDF5_FILE)
         print('Trained model weights exported')
-    predictFromModel(final_model, test_samples_list[0], caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)
+    predictFromModel(final_model, test_samples_list[2], caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)
