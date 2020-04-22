@@ -65,11 +65,11 @@ def getBasicModel(final_caption_length, embedding_dim, video_frame_shape, total_
 
     input_shape_vid = video_frame_shape
     imodel_input = Input(shape=input_shape_vid)
-    imodel_dropout = TimeDistributed(Dropout(0.5)) (imodel_input)
-    imodel_dense = TimeDistributed(Dense(1024, activation='relu')) (imodel_dropout)
-    imodel_batchnorm = TimeDistributed(BatchNormalization(axis=-1)) (imodel_dense)
-    imodel_dense = TimeDistributed(Dense(512, activation='relu')) (imodel_batchnorm)
-    imodel_lstm = LSTM(512, return_sequences=False, kernel_initializer='random_normal') (imodel_dense)
+    imodel_dense = TimeDistributed(Dense(1024, kernel_initializer='random_normal')) (imodel_input)
+    imodel_dropout = TimeDistributed(Dropout(0.5)) (imodel_dense)
+    imodel_batchnorm = TimeDistributed(BatchNormalization(axis=-1)) (imodel_dropout)
+    imodel_active = Activation('tanh') (imodel_batchnorm)
+    imodel_lstm = LSTM(1024, return_sequences=False, kernel_initializer='random_normal') (imodel_active)
     imodel_repeatvector = RepeatVector(final_caption_length) (imodel_lstm)
 
     combined_model = concatenate([cmodel_lstm, imodel_repeatvector], axis=-1)
@@ -84,7 +84,7 @@ def getBasicModel(final_caption_length, embedding_dim, video_frame_shape, total_
     return final_model
 
 def applyEmbeddingsAndCompile(model, embedding_weights):
-    optimizer = RMSprop(lr=0.0005, rho=0.9, epsilon=1e-8, decay=0)
+    optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-8, decay=0)
     if embedding_weights is not None:
         print('embedding weights found. Set layer to non-trainable')
         model.layers[4].set_weights([embedding_weights])
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     if os.path.exists(config.TRAINED_VIDEO_ID_NPY_FILE):
         video_ids = np.load(config.TRAINED_VIDEO_ID_NPY_FILE)
         print('video_ids loaded')
-        print(video_ids)
+        print(len(video_ids))
     train_samples, validation_samples, test_samples, caption_preprocessor, vocab_word_embeddings = prepareDataset(no_samples=400, video_ids=video_ids)
     # print(train_samples.keys())
     # print(test_samples.keys())
@@ -205,11 +205,11 @@ if __name__ == "__main__":
     print('Embedding weight matrix shape: ' + str(vocab_word_embeddings.shape))
     final_model = getBasicModel(CAPTION_LEN + 1, OUTDIM_EMB, video_frame_input_shape, VOCAB_SIZE)
     print('Starting training......')
-    train_generator = dataGenerator(train_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 8, VOCAB_SIZE)
+    train_generator = dataGenerator(train_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 16, VOCAB_SIZE)
     val_generator = dataGenerator(validation_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 4, VOCAB_SIZE)
     if not os.path.exists(config.TRAINED_MODEL_HDF5_FILE):
         applyEmbeddingsAndCompile(final_model, vocab_word_embeddings)
-        final_model.fit_generator(train_generator, steps_per_epoch=38, epochs=10,
+        final_model.fit_generator(train_generator, steps_per_epoch=19, epochs=10,
                                  verbose=1, validation_data=val_generator, validation_steps=19,
                                  initial_epoch=0, callbacks=[BasicModelCallback()])
         final_model.save_weights(config.TRAINED_MODEL_HDF5_FILE)
@@ -217,5 +217,8 @@ if __name__ == "__main__":
         np.save(config.TRAINED_VIDEO_ID_NPY_FILE, all_video_ids_np)
     else:
         final_model.load_weights(config.TRAINED_MODEL_HDF5_FILE)
-        print('Trained model weights exported') 
-    predictFromModel(final_model, test_samples_list[5], caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)
+        print('Trained model weights exported')
+    test_video_index =  5
+    video_id = list(test_samples.keys())[test_video_index]
+    print('Predicting for video: ' + video_id)
+    predictFromModel(final_model, test_samples_list[test_video_index], caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)
