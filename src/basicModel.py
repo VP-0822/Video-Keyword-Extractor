@@ -87,9 +87,11 @@ def getBasicModel(final_caption_length, embedding_dim, video_frame_shape, total_
 def applyEmbeddingsAndCompile(model, embedding_weights):
     optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-8, decay=0)
     if embedding_weights is not None:
+        #model_dict = {i: v for i, v in enumerate(model.layers)}
+        #print(model_dict)
         print('embedding weights found. Set layer to non-trainable')
-        model.layers[4].set_weights([embedding_weights])
-        model.layers[4].trainable = False
+        model.layers[5].set_weights([embedding_weights])
+        model.layers[5].trainable = False
     model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
     model.summary()
     print('Model compiled successfully')
