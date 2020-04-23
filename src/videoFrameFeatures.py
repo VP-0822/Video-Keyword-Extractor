@@ -4,7 +4,7 @@ import numpy as np
 import random
 import math
 
-MAX_FRAME_LIMIT = 60
+MAX_FRAME_LIMIT = 40
 
 def loadPickleFile(pickleFilePath):
     with open(pickleFilePath, "rb") as fp:
