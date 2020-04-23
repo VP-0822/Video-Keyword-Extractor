@@ -16,7 +16,7 @@ import config
 import captionPreprocess as cp
 import gloveEmbeddings as ge
 
-def prepareDataset(no_samples=200, train_validation_split=0.2, no_test_samples=20, video_ids=None):
+def prepareDataset(no_samples=200, train_validation_split=0.2, no_test_samples=15, video_ids=None):
     video_frames = vff.loadVideoFrameFeatures(config.PICKLE_FILE_PATH, no_samples, video_ids)
     print('video frame features loaded')
     final_video_ids = list(video_frames.keys())
@@ -126,8 +126,8 @@ def dataGenerator(training_set, wordtoidx, max_caption_length, num_videos_per_ba
             if current_batch_item_count==num_videos_per_batch:
                 # print('##########################')
                 # print('Dataset name: ' + dataset_name)
-                # print("=== x1 ***********************************====")
-                # print(np.array(x1).shape)
+                # print("=== x1 ***********************************====") 
+                # print(', '.join(map(str,np.array(x1).shape)) +' && '+ ', '.join(map(str,np.array(x2).shape)) +' && '+ ', '.join(map(str,np.array(y).shape)))
                 # print(np.array(x1[0]).shape)
                 # print("=== x2 ***********************************====")
                 # print(np.array(x2).shape)
@@ -165,7 +165,9 @@ def predictFromModel(model, video_sample, wordtoidx, idxtoword, max_caption_leng
     print(in_text)
 
 class BasicModelCallback(callbacks.Callback):
-    def __init__(self):
+    def __init__(self, final_model, folderName):
+        self.final_model = final_model
+        self.folderName = folderName
         pass
     def on_epoch_end(self, epoch, logs={}):
         print("Epoch %d End " % epoch)
@@ -176,6 +178,9 @@ class BasicModelCallback(callbacks.Callback):
         print('Epoch Training loss: ' + str(loss))
         # print('Epoch Training Accuracy: ' + str(acc))
         print('=========================================')
+        if epoch % 9 is 0 and epoch is not 0:
+            print('writing to model weights file')
+            self.final_model.save_weights(self.folderName + 'trainedModel_' + str(epoch) + '.hdf5')
     
     def on_batch_end(self, batch, logs={}):
         print("Batch %d ends" % batch)
@@ -190,7 +195,7 @@ if __name__ == "__main__":
         video_ids = np.load(config.TRAINED_VIDEO_ID_NPY_FILE)
         print('video_ids loaded')
         print(len(video_ids))
-    train_samples, validation_samples, test_samples, caption_preprocessor, vocab_word_embeddings = prepareDataset(no_samples=400, video_ids=video_ids)
+    train_samples, validation_samples, test_samples, caption_preprocessor, vocab_word_embeddings = prepareDataset(no_samples=915, video_ids=video_ids)
     # print(train_samples.keys())
     # print(test_samples.keys())
     all_video_ids = list(validation_samples.keys())
@@ -212,13 +217,15 @@ if __name__ == "__main__":
     print('Embedding weight matrix shape: ' + str(vocab_word_embeddings.shape))
     final_model = getBasicModel(CAPTION_LEN + 1, OUTDIM_EMB, video_frame_input_shape, VOCAB_SIZE)
     print('Starting training......')
-    train_generator = dataGenerator(train_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 16, VOCAB_SIZE, dataset_name='Training')
-    val_generator = dataGenerator(validation_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 4, VOCAB_SIZE, dataset_name='Validation')
+    train_generator = dataGenerator(train_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 20, VOCAB_SIZE, dataset_name='Training')
+    val_generator = dataGenerator(validation_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 10, VOCAB_SIZE, dataset_name='Validation')
     if not os.path.exists(config.TRAINED_MODEL_HDF5_FILE):
         applyEmbeddingsAndCompile(final_model, vocab_word_embeddings)
-        final_model.fit_generator(train_generator, steps_per_epoch=20, epochs=100,
-                                 verbose=1, validation_data=val_generator, validation_steps=20,
-                                 initial_epoch=0, callbacks=[BasicModelCallback()])
+        all_video_ids_np = np.asarray(all_video_ids)
+        np.save(config.TRAINED_MODEL_FOLDER + 'trainedVideoIds_1.npy', all_video_ids_np)
+        final_model.fit_generator(train_generator, steps_per_epoch=36, epochs=100,
+                                 verbose=1, validation_data=val_generator, validation_steps=18,
+                                 initial_epoch=0, callbacks=[BasicModelCallback(final_model, config.TRAINED_MODEL_FOLDER)])
         final_model.save_weights(config.TRAINED_MODEL_HDF5_FILE)
         all_video_ids_np = np.asarray(all_video_ids)
         np.save(config.TRAINED_VIDEO_ID_NPY_FILE, all_video_ids_np)
