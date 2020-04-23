@@ -15,18 +15,19 @@ def loadVideoFrameFeatures(pickleFilePath, numberOfVideos=None, video_ids=None):
     all_videos_frames = loadPickleFile(pickleFilePath)
     if numberOfVideos is None:
         return all_videos_frames
+
+    random_videos_frames = {}
+    if video_ids is not None:
+        for video_id in video_ids:
+            if(len(all_videos_frames[video_id]) > MAX_FRAME_LIMIT):
+                random_frame_pick_interval = math.floor(len(all_videos_frames[video_id]) / MAX_FRAME_LIMIT)
+                random_videos_frames[video_id] = all_videos_frames[video_id][0:random_frame_pick_interval*MAX_FRAME_LIMIT:random_frame_pick_interval]
+            else:
+                random_videos_frames[video_id] = all_videos_frames[video_id]
+        return random_videos_frames
     all_video_ids = list(all_videos_frames.keys())
     random.shuffle(all_video_ids)
-    random_videos_frames = {}
     for index, video_id in enumerate(all_video_ids):
-        if video_ids is not None:
-            if video_id in video_ids:
-                if(len(all_videos_frames[video_id]) > MAX_FRAME_LIMIT):
-                    random_frame_pick_interval = math.floor(len(all_videos_frames[video_id]) / MAX_FRAME_LIMIT)
-                    random_videos_frames[video_id] = all_videos_frames[video_id][0:random_frame_pick_interval*MAX_FRAME_LIMIT:random_frame_pick_interval]
-                else:
-                    random_videos_frames[video_id] = all_videos_frames[video_id]
-            continue
         if index is numberOfVideos:
             break
         if(len(all_videos_frames[video_id]) > MAX_FRAME_LIMIT):

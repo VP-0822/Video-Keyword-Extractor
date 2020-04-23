@@ -15,14 +15,26 @@ def loadCaptionData(captionFileName):
             englishCaptions[row_id].append(caption)
     return englishCaptions
 
-def filterCaptionsForSamples(caption_file, video_ids):
+def filterCaptionsForSamples(caption_file, video_ids, load_single_caption=True):
     all_english_captions = loadCaptionData(caption_file)
     filteredCaptions = dict()
     for videoId in video_ids:
-        filteredCaptions[videoId] = all_english_captions[videoId]
+        if load_single_caption is False:
+            filteredCaptions[videoId] = all_english_captions[videoId]
+            continue
+        max_length_caption = None
+        max_length = 0
+        for caption in all_english_captions[videoId]:
+            if len(caption.split(' ')) > max_length:
+                max_length_caption = caption
+                max_length = len(caption.split(' '))
+        filteredCaptions[videoId] = [max_length_caption]
     return filteredCaptions
 
 if __name__ == '__main__':
-    allCaptions = loadCaptionData(config.CSV_FILE_PATH)
+    #allCaptions = loadCaptionData(config.CSV_FILE_PATH)
+    allCaptions = filterCaptionsForSamples(config.CSV_FILE_PATH, ['mv89psg6zh4_33_46'])
     print(len(allCaptions))
     print(len(allCaptions['mv89psg6zh4_33_46']))
+    print(len(allCaptions['mv89psg6zh4_33_46'][0]))
+

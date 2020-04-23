@@ -94,12 +94,13 @@ def applyEmbeddingsAndCompile(model, embedding_weights):
     print('Model compiled successfully')
     return model
 
-def dataGenerator(training_set, wordtoidx, max_caption_length, num_videos_per_batch, vocab_size):
+def dataGenerator(training_set, wordtoidx, max_caption_length, num_videos_per_batch, vocab_size, dataset_name='Training'):
     # x1 - Training data for videos
     # x2 - The caption that goes with each photo
     # y - The predicted rest of the caption
     x1, x2, y = [], [], []
     current_batch_item_count=1
+    #print('Dataset name: ' + dataset_name)
     while True:
         for key, values in training_set.items():
             current_batch_item_count+=1
@@ -123,10 +124,14 @@ def dataGenerator(training_set, wordtoidx, max_caption_length, num_videos_per_ba
                 x2.append(frame_features)
                 y.append(out_seq)
             if current_batch_item_count==num_videos_per_batch:
-                # print("===***********************************====")
-                # print(len(x2))
-                # print(len(x2[0]))
+                # print('##########################')
+                # print('Dataset name: ' + dataset_name)
+                # print("=== x1 ***********************************====")
+                # print(np.array(x1).shape)
+                # print(np.array(x1[0]).shape)
+                # print("=== x2 ***********************************====")
                 # print(np.array(x2).shape)
+                # print(np.array(x2[0]).shape)
                 yield ([np.array(x1), np.array(x2)], np.array(y))
                 current_batch_item_count=1
                 x1, x2, y = [], [], []
@@ -136,15 +141,17 @@ def predictFromModel(model, video_sample, wordtoidx, idxtoword, max_caption_leng
     original_video_caption_input = video_sample[1][0]
     dummy_caption = [cp.START_KEYWORD]
     dummy_caption.extend([cp.STOP_KEYWORD] * (max_caption_length - 1))
+    #dummy_caption = f'{cp.START_KEYWORD} {original_video_caption_input}'
     video_dummy_caption = [wordtoidx[word] for word in dummy_caption if word in wordtoidx]
+    # video_dummy_caption = [wordtoidx[word] for word in dummy_caption.split(' ') if word in wordtoidx]
+    # for i in range(max_caption_length-len(video_dummy_caption)):
+    #     video_dummy_caption.append(wordtoidx[cp.NONE_KEYWORD])
     print(video_dummy_caption)
     input_sequence = pad_sequences([video_dummy_caption], maxlen=max_caption_length)
     print(list(input_sequence))
     captionoutput = model.predict([list(input_sequence), [video_frame_input]])
     print('Prediction done!')
     print(captionoutput.shape)
-    print(wordtoidx[cp.START_KEYWORD])
-    print(wordtoidx[cp.STOP_KEYWORD])
     print(np.argmax(captionoutput[0][3]))
     print(np.argmax(captionoutput[0][7]))
     in_text = ''
@@ -205,12 +212,12 @@ if __name__ == "__main__":
     print('Embedding weight matrix shape: ' + str(vocab_word_embeddings.shape))
     final_model = getBasicModel(CAPTION_LEN + 1, OUTDIM_EMB, video_frame_input_shape, VOCAB_SIZE)
     print('Starting training......')
-    train_generator = dataGenerator(train_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 16, VOCAB_SIZE)
-    val_generator = dataGenerator(validation_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 4, VOCAB_SIZE)
+    train_generator = dataGenerator(train_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 16, VOCAB_SIZE, dataset_name='Training')
+    val_generator = dataGenerator(validation_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 4, VOCAB_SIZE, dataset_name='Validation')
     if not os.path.exists(config.TRAINED_MODEL_HDF5_FILE):
         applyEmbeddingsAndCompile(final_model, vocab_word_embeddings)
-        final_model.fit_generator(train_generator, steps_per_epoch=19, epochs=10,
-                                 verbose=1, validation_data=val_generator, validation_steps=19,
+        final_model.fit_generator(train_generator, steps_per_epoch=20, epochs=100,
+                                 verbose=1, validation_data=val_generator, validation_steps=20,
                                  initial_epoch=0, callbacks=[BasicModelCallback()])
         final_model.save_weights(config.TRAINED_MODEL_HDF5_FILE)
         all_video_ids_np = np.asarray(all_video_ids)
