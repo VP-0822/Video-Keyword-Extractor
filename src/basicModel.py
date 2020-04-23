@@ -56,8 +56,9 @@ def getBasicModel(final_caption_length, embedding_dim, video_frame_shape, total_
     cmodel_input = Input(shape=(final_caption_length,), name='caption_input')
     cmodel_embedding = Embedding(total_vocab_size, embedding_dim, mask_zero=True, name='caption_embedding') (cmodel_input)
     cmodel_dense = TimeDistributed(Dense(512,kernel_initializer='random_normal')) (cmodel_embedding)
-    cmodel_dropout = TimeDistributed(Dropout(0.50)) (cmodel_dense)
-    cmodel_lstm = LSTM(512, return_sequences=True,kernel_initializer='random_normal') (cmodel_dropout)
+    #cmodel_dropout = TimeDistributed(Dropout(0.50)) (cmodel_dense)
+    #cmodel_lstm = LSTM(512, return_sequences=True,kernel_initializer='random_normal') (cmodel_dropout)
+    cmodel_lstm = LSTM(512, return_sequences=True,kernel_initializer='random_normal') (cmodel_dense)
     #cmodel.summary()
 
     # Video frames input shape is (number_of_frames, frame_features) i.e. (None, 2048) In case of Video2Description model it is (40, 2048)
@@ -66,7 +67,7 @@ def getBasicModel(final_caption_length, embedding_dim, video_frame_shape, total_
     input_shape_vid = video_frame_shape
     imodel_input = Input(shape=input_shape_vid)
     imodel_dense = TimeDistributed(Dense(1024, kernel_initializer='random_normal')) (imodel_input)
-    imodel_dropout = TimeDistributed(Dropout(0.5)) (imodel_dense)
+    imodel_dropout = TimeDistributed(Dropout(0.2)) (imodel_dense)
     imodel_batchnorm = TimeDistributed(BatchNormalization(axis=-1)) (imodel_dropout)
     imodel_active = Activation('tanh') (imodel_batchnorm)
     imodel_lstm = LSTM(1024, return_sequences=False, kernel_initializer='random_normal') (imodel_active)
