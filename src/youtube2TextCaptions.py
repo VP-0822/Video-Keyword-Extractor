@@ -15,12 +15,15 @@ def loadCaptionData(captionFileName):
             englishCaptions[row_id].append(caption)
     return englishCaptions
 
-def filterCaptionsForSamples(caption_file, video_ids, load_single_caption=True):
+def filterCaptionsForSamples(caption_file, video_ids, load_single_caption=True, caption_per_video_limit=5):
     all_english_captions = loadCaptionData(caption_file)
     filteredCaptions = dict()
     for videoId in video_ids:
         if load_single_caption is False:
-            filteredCaptions[videoId] = all_english_captions[videoId]
+            if(len(all_english_captions[videoId]) > caption_per_video_limit):
+                filteredCaptions[videoId] = all_english_captions[videoId][:caption_per_video_limit]
+            else:
+                filteredCaptions[videoId] = all_english_captions[videoId]
             continue
         max_length_caption = None
         max_length = 0
