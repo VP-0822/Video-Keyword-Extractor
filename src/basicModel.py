@@ -7,20 +7,67 @@ from tensorflow.keras.backend import concatenate
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.utils import to_categorical
 from keras import callbacks
+from keras import optimizers
 import os
 import numpy as np
 import math
 import videoFrameFeatures as vff
 import youtube2TextCaptions as y2tc
 import config
+import util
 import captionPreprocess as cp
 import gloveEmbeddings as ge
+import matplotlib.pyplot as plt
+
+def extractVideoInputs(video_frames, no_samples, train_validation_split, no_test_samples):
+    train_validation_split = math.floor((no_samples - no_test_samples) * train_validation_split)
+    train_samples = dict()
+    val_samples = dict()
+    test_samples = dict()
+
+    if not os.path.exists(config.TRAINING_VIDEOID_FILE):
+        validation_size_counter = 0
+        train_size_counter = 0
+        for key in video_frames.keys():
+            if (validation_size_counter + train_size_counter) == (no_samples - no_test_samples):
+                test_samples[key] = [video_frames[key]]
+                continue
+            if(validation_size_counter < train_validation_split):
+                val_samples[key] = [video_frames[key]]
+                validation_size_counter += 1
+                continue
+            train_samples[key] = [video_frames[key]]
+            train_size_counter += 1
+        util.writeArrayToFile(config.TRAINING_VIDEOID_FILE, list(train_samples.keys()))
+        util.writeArrayToFile(config.VALIDATION_VIDEOID_FILE, list(val_samples.keys()))
+        util.writeArrayToFile(config.TESTING_VIDEOID_FILE, list(test_samples.keys()))
+    else:
+        training_video_id_list = util.readArrayFromFile(config.TRAINING_VIDEOID_FILE)
+        validation_video_id_list = util.readArrayFromFile(config.VALIDATION_VIDEOID_FILE)
+        testing_video_id_list = util.readArrayFromFile(config.TESTING_VIDEOID_FILE)
+        for key in video_frames.keys():
+            if key in training_video_id_list:
+                train_samples[key] = [video_frames[key]]
+            if key in validation_video_id_list:
+                val_samples[key] = [video_frames[key]]
+            if key in testing_video_id_list:
+                test_samples[key] = [video_frames[key]]
+    
+    print('Number of Training samples: ' + str(len(train_samples)))
+    print('Number of Validation samples: ' + str(len(val_samples)))
+    print('Number of Testing samples: ' + str(len(test_samples)))
+    return train_samples, val_samples, test_samples
+
 
 def prepareDataset(no_samples=200, train_validation_split=0.2, no_test_samples=15, video_ids=None):
     video_frames = vff.loadVideoFrameFeatures(config.PICKLE_FILE_PATH, no_samples, video_ids)
     print('video frame features loaded')
-    final_video_ids = list(video_frames.keys())
-    video_captions = y2tc.filterCaptionsForSamples(config.CSV_FILE_PATH,final_video_ids)
+    
+    train_samples, val_samples, test_samples = extractVideoInputs(video_frames, no_samples, train_validation_split, no_test_samples)
+    final_video_ids = list(train_samples.keys())
+    final_video_ids.extend(list(val_samples.keys()))
+
+    video_captions = y2tc.filterCaptionsForSamples(config.CSV_FILE_PATH, final_video_ids)
     print('video captions loaded')
     caption_preprocessor = cp.CaptionPreprocessor(video_captions, word_freq_threshold=3)
     print('Final word count: ' + str(caption_preprocessor.getVocabSize()))
@@ -30,29 +77,21 @@ def prepareDataset(no_samples=200, train_validation_split=0.2, no_test_samples=1
     print('glove embedding loaded')
     vocab_word_embeddings = glove_embedding.getEmbeddingVectorFor(caption_preprocessor.getCaptionsVocabList(), caption_preprocessor.getVocabSize())
     preprocessed_video_captions = caption_preprocessor.caption_inputs
-    train_validation_split = math.floor((no_samples - no_test_samples) * train_validation_split)
-    validation_size_counter = 0
-    train_size_counter = 0
-    train_samples = dict()
-    val_samples = dict()
-    test_samples = dict()
-    for key in video_frames.keys():
-        if (validation_size_counter + train_size_counter) == (no_samples - no_test_samples):
-            test_samples[key] = [video_frames[key], preprocessed_video_captions[key]]
-            continue
-        if(validation_size_counter < train_validation_split):
-            val_samples[key] = [video_frames[key], preprocessed_video_captions[key]]
-            validation_size_counter += 1
-            continue
-        train_samples[key] = [video_frames[key], preprocessed_video_captions[key]]
-        train_size_counter += 1
+
+    for key in train_samples.keys():
+        train_samples[key].append(preprocessed_video_captions[key])
+    for key in val_samples.keys():
+        val_samples[key].append(preprocessed_video_captions[key])
+
+    test_video_captions = y2tc.filterCaptionsForSamples(config.CSV_FILE_PATH, list(test_samples.keys()))
+    for key, value in test_video_captions.items():
+        test_samples[key].append(value)
     
     return train_samples, val_samples, test_samples, caption_preprocessor, vocab_word_embeddings
 
 def getBasicModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab_size, embedding_weights=None):
     # Caption input shape is (Captionlen+1, Outputembeddeding_dimension) i.e. (16, 300)
     # And when we fit, we will do it in batches so currently batch dimension will be (None, 16, 300)
-
     cmodel_input = Input(shape=(final_caption_length,), name='caption_input')
     cmodel_embedding = Embedding(total_vocab_size, embedding_dim, mask_zero=True, name='caption_embedding') (cmodel_input)
     cmodel_dense = TimeDistributed(Dense(512,kernel_initializer='random_normal')) (cmodel_embedding)
@@ -80,12 +119,13 @@ def getBasicModel(final_caption_length, embedding_dim, video_frame_shape, total_
 
     # using default optimizer and loss function
     final_model = Model(inputs=[cmodel_input, imodel_input], outputs= [combined_model_outputs])
-    final_model.summary()
+    #final_model.summary()
     print('Model created successfully')
     return final_model
 
 def applyEmbeddingsAndCompile(model, embedding_weights):
-    optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-8, decay=0)
+    #optimizer = RMSprop(lr=0.0005, rho=0.9, epsilon=1e-8, decay=0)
+    optimizer = Adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.99, epsilon=1e-07, amsgrad=True, name='Adam')
     if embedding_weights is not None:
         #model_dict = {i: v for i, v in enumerate(model.layers)}
         #print(model_dict)
@@ -194,6 +234,7 @@ class BasicModelCallback(callbacks.Callback):
 
 if __name__ == "__main__":
     video_ids = None
+    CONTINUE_TRAINING = True
     if os.path.exists(config.TRAINED_VIDEO_ID_NPY_FILE):
         video_ids = np.load(config.TRAINED_VIDEO_ID_NPY_FILE)
         print('video_ids loaded')
@@ -204,12 +245,6 @@ if __name__ == "__main__":
     all_video_ids = list(validation_samples.keys())
     all_video_ids.extend(list(train_samples.keys()))
     all_video_ids.extend(list(test_samples.keys()))
-    train_samples_list = list(train_samples.values())
-    test_samples_list = list(test_samples.values())
-    validation_samples_list = list(validation_samples.values())
-    print('Number of Training samples: ' + str(len(train_samples_list)))
-    print('Number of Validation samples: ' + str(len(validation_samples_list)))
-    print('Number of Testing samples: ' + str(len(test_samples_list)))
     # print(train_samples_list[0][1])
     CAPTION_LEN = caption_preprocessor.caption_max_length
     OUTDIM_EMB = 200
@@ -222,20 +257,42 @@ if __name__ == "__main__":
     print('Starting training......')
     train_generator = dataGenerator(train_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 20, VOCAB_SIZE, dataset_name='Training')
     val_generator = dataGenerator(validation_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 10, VOCAB_SIZE, dataset_name='Validation')
-    if not os.path.exists(config.TRAINED_MODEL_HDF5_FILE):
+    if CONTINUE_TRAINING is True or not os.path.exists(config.TRAINED_MODEL_HDF5_FILE):
         applyEmbeddingsAndCompile(final_model, vocab_word_embeddings)
+        if CONTINUE_TRAINING is True:
+            print('continuing previous training')
+            final_model.load_weights(config.TRAINED_MODEL_HDF5_FILE)
         all_video_ids_np = np.asarray(all_video_ids)
         np.save(config.TRAINED_MODEL_FOLDER + 'trainedVideoIds_1.npy', all_video_ids_np)
-        final_model.fit_generator(train_generator, steps_per_epoch=36, epochs=100,
+        history = final_model.fit_generator(train_generator, steps_per_epoch=36, epochs=10,
                                  verbose=1, validation_data=val_generator, validation_steps=18,
                                  initial_epoch=0, callbacks=[BasicModelCallback(final_model, config.TRAINED_MODEL_FOLDER)])
         final_model.save_weights(config.TRAINED_MODEL_HDF5_FILE)
         all_video_ids_np = np.asarray(all_video_ids)
         np.save(config.TRAINED_VIDEO_ID_NPY_FILE, all_video_ids_np)
+
+        loss_train = history.history['loss']
+        loss_val = history.history['val_loss']
+        print(loss_train)
+        print(loss_val)
+        #loss_val.extend(loss_val_list[len(loss_val_list) - 1] * (len(loss_train_list) - len(loss_val_list)))
+        
+        epochs = range(1,10)
+        plt.plot(epochs, loss_train[:9], 'g', label='Training loss')
+        plt.plot(epochs, loss_val[:9], 'b', label='validation loss')
+        plt.title('Training and Validation loss')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.show()
     else:
         final_model.load_weights(config.TRAINED_MODEL_HDF5_FILE)
         print('Trained model weights exported')
-    test_video_index =  5
+    test_video_index =  1
     video_id = list(test_samples.keys())[test_video_index]
-    print('Predicting for video: ' + video_id)
-    predictFromModel(final_model, test_samples_list[test_video_index], caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)
+
+    original_video_caption_input = list(test_samples.values())[test_video_index][1][0]
+    tokens = original_video_caption_input.split(' ')
+    #print(vocab_word_embeddings[caption_preprocessor.getWordToIndexDict()[tokens[1]]])
+    #print('Predicting for video: ' + video_id)
+    predictFromModel(final_model, list(test_samples.values())[test_video_index], caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)

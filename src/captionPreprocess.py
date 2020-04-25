@@ -3,6 +3,7 @@ import string
 START_KEYWORD = '>'
 STOP_KEYWORD = '<'
 NONE_KEYWORD = '?!?'
+EXTRA_KEYWORD = '___' # extra keyword for unseen vocab words for validation and test
 punctuation_mapping = str.maketrans('', '', string.punctuation)
 
 class CaptionPreprocessor:
@@ -63,8 +64,9 @@ class CaptionPreprocessor:
         self.final_captions_vocab.append(START_KEYWORD)
         self.final_captions_vocab.append(STOP_KEYWORD)
         self.final_captions_vocab.append(NONE_KEYWORD)
+        self.final_captions_vocab.append(EXTRA_KEYWORD)
         for word in actual_word_vocab:
-            if word in [NONE_KEYWORD, START_KEYWORD, STOP_KEYWORD]:
+            if word in [NONE_KEYWORD, START_KEYWORD, STOP_KEYWORD, EXTRA_KEYWORD]:
                 continue
             self.final_captions_vocab.append(word)
 
@@ -92,6 +94,11 @@ class CaptionPreprocessor:
     
     def getCaptionsVocabList(self):
         return self.final_captions_vocab
+    
+    def getFilteredWord(self, word):
+        if word in self.word_to_index.keys():
+            return word
+        return EXTRA_KEYWORD
     
 
 
