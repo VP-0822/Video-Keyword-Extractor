@@ -67,7 +67,7 @@ def prepareDataset(no_samples=200, train_validation_split=0.2, no_test_samples=1
     final_video_ids = list(train_samples.keys())
     final_video_ids.extend(list(val_samples.keys()))
 
-    video_captions = y2tc.filterCaptionsForSamples(config.CSV_FILE_PATH, final_video_ids)
+    video_captions = y2tc.filterCaptionsForSamples(config.CSV_FILE_PATH, final_video_ids, load_single_caption=False)
     print('video captions loaded')
     caption_preprocessor = cp.CaptionPreprocessor(video_captions, word_freq_threshold=2)
     print('Final word count: ' + str(caption_preprocessor.getVocabSize()))

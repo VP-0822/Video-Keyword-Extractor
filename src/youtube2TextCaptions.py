@@ -15,7 +15,7 @@ def loadCaptionData(captionFileName):
             englishCaptions[row_id].append(caption)
     return englishCaptions
 
-def filterCaptionsForSamples(caption_file, video_ids, load_single_caption=True, caption_per_video_limit=5):
+def filterCaptionsForSamples(caption_file, video_ids, load_single_caption=True, caption_per_video_limit=4):
     all_english_captions = loadCaptionData(caption_file)
     filteredCaptions = dict()
     for videoId in video_ids:
