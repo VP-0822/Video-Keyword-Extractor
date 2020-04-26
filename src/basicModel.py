@@ -109,7 +109,7 @@ def getBasicModel(final_caption_length, embedding_dim, video_frame_shape, total_
     imodel_dropout = TimeDistributed(Dropout(0.2)) (imodel_dense)
     imodel_batchnorm = TimeDistributed(BatchNormalization(axis=-1)) (imodel_dropout)
     imodel_active = Activation('tanh') (imodel_batchnorm)
-    imodel_lstm = LSTM(1024, return_sequences=False, kernel_initializer='random_normal') (imodel_active)
+    imodel_lstm = Bidirectional(LSTM(1024, return_sequences=False, kernel_initializer='random_normal')) (imodel_active)
     imodel_repeatvector = RepeatVector(final_caption_length) (imodel_lstm)
 
     combined_model = concatenate([cmodel_lstm, imodel_repeatvector], axis=-1)
@@ -234,7 +234,7 @@ class BasicModelCallback(callbacks.Callback):
 
 if __name__ == "__main__":
     video_ids = None
-    CONTINUE_TRAINING = True
+    CONTINUE_TRAINING = False
     if os.path.exists(config.TRAINED_VIDEO_ID_NPY_FILE):
         video_ids = np.load(config.TRAINED_VIDEO_ID_NPY_FILE)
         print('video_ids loaded')
@@ -288,11 +288,11 @@ if __name__ == "__main__":
     else:
         final_model.load_weights(config.TRAINED_MODEL_HDF5_FILE)
         print('Trained model weights exported')
-    test_video_index =  1
+    test_video_index =  8
     video_id = list(test_samples.keys())[test_video_index]
 
     original_video_caption_input = list(test_samples.values())[test_video_index][1][0]
     tokens = original_video_caption_input.split(' ')
     #print(vocab_word_embeddings[caption_preprocessor.getWordToIndexDict()[tokens[1]]])
     #print('Predicting for video: ' + video_id)
-    predictFromModel(final_model, list(test_samples.values())[test_video_index], caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)
+    predictFromModel(final_model, list(train_samples.values())[test_video_index], caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)
