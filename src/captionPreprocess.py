@@ -7,7 +7,7 @@ EXTRA_KEYWORD = '___' # extra keyword for unseen vocab words for validation and 
 punctuation_mapping = str.maketrans('', '', string.punctuation)
 
 class CaptionPreprocessor:
-    def __init__(self, caption_inputs :dict, captionCleanup = True, word_freq_threshold=10):
+    def __init__(self, caption_inputs :dict, captionCleanup = True, word_freq_threshold=3):
         self.caption_inputs = caption_inputs
         self.word_freq_threshold = word_freq_threshold
         self.captionCleanup = captionCleanup

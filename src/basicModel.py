@@ -69,7 +69,7 @@ def prepareDataset(no_samples=200, train_validation_split=0.2, no_test_samples=1
 
     video_captions = y2tc.filterCaptionsForSamples(config.CSV_FILE_PATH, final_video_ids)
     print('video captions loaded')
-    caption_preprocessor = cp.CaptionPreprocessor(video_captions, word_freq_threshold=3)
+    caption_preprocessor = cp.CaptionPreprocessor(video_captions, word_freq_threshold=2)
     print('Final word count: ' + str(caption_preprocessor.getVocabSize()))
     #print(caption_preprocessor.getCaptionsVocabList())
     print('video captions preprocessed')
@@ -109,6 +109,7 @@ def getBasicModel(final_caption_length, embedding_dim, video_frame_shape, total_
     imodel_dropout = TimeDistributed(Dropout(0.2)) (imodel_dense)
     imodel_batchnorm = TimeDistributed(BatchNormalization(axis=-1)) (imodel_dropout)
     imodel_active = Activation('tanh') (imodel_batchnorm)
+    #imodel_lstm = LSTM(1024, return_sequences=False, kernel_initializer='random_normal') (imodel_active)
     imodel_lstm = Bidirectional(LSTM(1024, return_sequences=False, kernel_initializer='random_normal')) (imodel_active)
     imodel_repeatvector = RepeatVector(final_caption_length) (imodel_lstm)
 
@@ -189,23 +190,32 @@ def predictFromModel(model, video_sample, wordtoidx, idxtoword, max_caption_leng
     # video_dummy_caption = [wordtoidx[word] for word in dummy_caption.split(' ') if word in wordtoidx]
     # for i in range(max_caption_length-len(video_dummy_caption)):
     #     video_dummy_caption.append(wordtoidx[cp.NONE_KEYWORD])
-    print(video_dummy_caption)
+    #print(video_dummy_caption)
     input_sequence = pad_sequences([video_dummy_caption], maxlen=max_caption_length)
-    print(list(input_sequence))
-    captionoutput = model.predict([list(input_sequence), [video_frame_input]])
-    print('Prediction done!')
-    print(captionoutput.shape)
-    print(np.argmax(captionoutput[0][3]))
-    print(np.argmax(captionoutput[0][7]))
-    in_text = ''
-    for oneword in captionoutput[0]:
-        yhat = np.argmax(oneword)
+    #print(list(input_sequence))
+    #print(np.argmax(captionoutput[0][3]))
+    #print(np.argmax(captionoutput[0][7]))
+    input_seq_list = list(input_sequence)
+    output_caption = []
+    caption_length_counter = 0
+    while caption_length_counter < max_caption_length:
+        captionoutput = model.predict([np.array(input_seq_list), np.array([video_frame_input])])
+        #print('Shape of predict model: ' + str(captionoutput.shape))
+        yhat = np.argmax(captionoutput[0][caption_length_counter])
         word = idxtoword[yhat]
-        in_text += ' ' + word
         if word == cp.STOP_KEYWORD:
             break
+        output_caption.append(word)
+        if caption_length_counter + 1 != max_caption_length:
+            input_seq_list[0][caption_length_counter+1] = wordtoidx[word]
+        caption_length_counter += 1
+        #for i, newOneHotWord in enumerate()
+    print('Prediction done!')
+    output_caption_text = ' '.join(output_caption)
+    print('Original caption:')
     print(original_video_caption_input)
-    print(in_text)
+    print('Final output caption:')
+    print(output_caption_text)
 
 class BasicModelCallback(callbacks.Callback):
     def __init__(self, final_model, folderName):
@@ -288,11 +298,11 @@ if __name__ == "__main__":
     else:
         final_model.load_weights(config.TRAINED_MODEL_HDF5_FILE)
         print('Trained model weights exported')
-    test_video_index =  8
+    test_video_index =  3
     video_id = list(test_samples.keys())[test_video_index]
 
     original_video_caption_input = list(test_samples.values())[test_video_index][1][0]
     tokens = original_video_caption_input.split(' ')
     #print(vocab_word_embeddings[caption_preprocessor.getWordToIndexDict()[tokens[1]]])
-    #print('Predicting for video: ' + video_id)
-    predictFromModel(final_model, list(train_samples.values())[test_video_index], caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)
+    print('Predicting for video: ' + video_id)
+    predictFromModel(final_model, list(test_samples.values())[test_video_index], caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)
