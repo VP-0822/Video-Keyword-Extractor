@@ -264,7 +264,7 @@ if __name__ == "__main__":
             final_model.load_weights(config.TRAINED_MODEL_HDF5_FILE)
         all_video_ids_np = np.asarray(all_video_ids)
         np.save(config.TRAINED_MODEL_FOLDER + 'trainedVideoIds_1.npy', all_video_ids_np)
-        history = final_model.fit_generator(train_generator, steps_per_epoch=36, epochs=10,
+        history = final_model.fit_generator(train_generator, steps_per_epoch=36, epochs=100,
                                  verbose=1, validation_data=val_generator, validation_steps=18,
                                  initial_epoch=0, callbacks=[BasicModelCallback(final_model, config.TRAINED_MODEL_FOLDER)])
         final_model.save_weights(config.TRAINED_MODEL_HDF5_FILE)
@@ -277,9 +277,9 @@ if __name__ == "__main__":
         print(loss_val)
         #loss_val.extend(loss_val_list[len(loss_val_list) - 1] * (len(loss_train_list) - len(loss_val_list)))
         
-        epochs = range(1,10)
-        plt.plot(epochs, loss_train[:9], 'g', label='Training loss')
-        plt.plot(epochs, loss_val[:9], 'b', label='validation loss')
+        epochs = range(1,101)
+        plt.plot(epochs, loss_train, 'g', label='Training loss')
+        plt.plot(epochs, loss_val, 'b', label='validation loss')
         plt.title('Training and Validation loss')
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
