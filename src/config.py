@@ -7,9 +7,10 @@ PICKLE_FILE_PATH = os.path.join(root_dir,'../data/videoFeaturesPickle/all_video_
 
 GLOVE_200_DIM_FILE = os.path.join(root_dir,'../data/glove/glove.6B.200d.txt')
 
-TRAINED_MODEL_HDF5_FILE = os.path.join(root_dir,'../data/trained.15vid.hdf5')
-TRAINED_VIDEO_ID_NPY_FILE = os.path.join(root_dir,'../data/trained.videoid.npy')
-TRAINED_MODEL_FOLDER = os.path.join(root_dir,'../data/')
-TRAINING_VIDEOID_FILE = os.path.join(root_dir,'../data/training.videoid.text')
-VALIDATION_VIDEOID_FILE = os.path.join(root_dir,'../data/validation.videoid.text')
-TESTING_VIDEOID_FILE = os.path.join(root_dir,'../data/testing.videoid.text')
+TRAINED_MODEL_HDF5_FILE = os.path.join(root_dir,'../data/output/trained.15vid.hdf5')
+TRAINED_VIDEO_ID_NPY_FILE = os.path.join(root_dir,'../data/output/trained.videoid.npy')
+TRAINED_MODEL_FOLDER = os.path.join(root_dir,'../data/output/')
+TRAINING_VIDEOID_FILE = os.path.join(root_dir,'../data/output/training.videoid.text')
+VALIDATION_VIDEOID_FILE = os.path.join(root_dir,'../data/output/validation.videoid.text')
+TESTING_VIDEOID_FILE = os.path.join(root_dir,'../data/output/testing.videoid.text')
+LOSS_ACCURACY_FILE = os.path.join(root_dir,'../data/output/lossAndAccuracy.text')

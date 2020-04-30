@@ -212,10 +212,17 @@ def predictFromModel(model, video_sample, wordtoidx, idxtoword, max_caption_leng
         #for i, newOneHotWord in enumerate()
     print('Prediction done!')
     output_caption_text = ' '.join(output_caption)
-    print('Original caption:')
+    print('[Original caption]:')
     print(original_video_caption_input)
-    print('Final output caption:')
+    print('[Predicted caption]:')
     print(output_caption_text)
+
+def predictTestSamples(model, testSampleSet, wordtoidx, idxtoword, max_caption_length):
+    for key, values in testSampleSet.items():
+        video_id = key
+        print('Predicting for video: ' + video_id)
+        predictFromModel(model, values, wordtoidx, idxtoword, max_caption_length)
+        print('###########')
 
 class BasicModelCallback(callbacks.Callback):
     def __init__(self, final_model, folderName):
@@ -231,7 +238,7 @@ class BasicModelCallback(callbacks.Callback):
         print('Epoch Training loss: ' + str(loss))
         # print('Epoch Training Accuracy: ' + str(acc))
         print('=========================================')
-        if epoch % 9 is 0 and epoch is not 0:
+        if epoch % 20 is 0 and epoch is not 0:
             print('writing to model weights file')
             self.final_model.save_weights(self.folderName + 'trainedModel_' + str(epoch) + '.hdf5')
     
@@ -245,6 +252,7 @@ class BasicModelCallback(callbacks.Callback):
 if __name__ == "__main__":
     video_ids = None
     CONTINUE_TRAINING = False
+    NO_EPOCHS = 100
     if os.path.exists(config.TRAINED_VIDEO_ID_NPY_FILE):
         video_ids = np.load(config.TRAINED_VIDEO_ID_NPY_FILE)
         print('video_ids loaded')
@@ -273,21 +281,25 @@ if __name__ == "__main__":
             print('continuing previous training')
             final_model.load_weights(config.TRAINED_MODEL_HDF5_FILE)
         all_video_ids_np = np.asarray(all_video_ids)
-        np.save(config.TRAINED_MODEL_FOLDER + 'trainedVideoIds_1.npy', all_video_ids_np)
-        history = final_model.fit_generator(train_generator, steps_per_epoch=36, epochs=100,
+        np.save(config.TRAINED_VIDEO_ID_NPY_FILE, all_video_ids_np)
+        history = final_model.fit_generator(train_generator, steps_per_epoch=36, epochs=NO_EPOCHS,
                                  verbose=1, validation_data=val_generator, validation_steps=18,
                                  initial_epoch=0, callbacks=[BasicModelCallback(final_model, config.TRAINED_MODEL_FOLDER)])
         final_model.save_weights(config.TRAINED_MODEL_HDF5_FILE)
-        all_video_ids_np = np.asarray(all_video_ids)
-        np.save(config.TRAINED_VIDEO_ID_NPY_FILE, all_video_ids_np)
 
         loss_train = history.history['loss']
         loss_val = history.history['val_loss']
+        acc_train = history.history['accuracy']
+        acc_val = history.history['val_accuracy']
+
+        util.writeLossAndAccuracyToFile(config.LOSS_ACCURACY_FILE, NO_EPOCHS, loss_train, loss_val, acc_train, acc_val)
         print(loss_train)
         print(loss_val)
+        print(acc_train)
+        print(acc_val)
         #loss_val.extend(loss_val_list[len(loss_val_list) - 1] * (len(loss_train_list) - len(loss_val_list)))
         
-        epochs = range(1,101)
+        epochs = range(1, NO_EPOCHS + 1)
         plt.plot(epochs, loss_train, 'g', label='Training loss')
         plt.plot(epochs, loss_val, 'b', label='validation loss')
         plt.title('Training and Validation loss')
@@ -298,11 +310,11 @@ if __name__ == "__main__":
     else:
         final_model.load_weights(config.TRAINED_MODEL_HDF5_FILE)
         print('Trained model weights exported')
-    test_video_index =  3
-    video_id = list(test_samples.keys())[test_video_index]
+    # test_video_index =  3
+    # video_id = list(test_samples.keys())[test_video_index]
 
-    original_video_caption_input = list(test_samples.values())[test_video_index][1][0]
-    tokens = original_video_caption_input.split(' ')
-    #print(vocab_word_embeddings[caption_preprocessor.getWordToIndexDict()[tokens[1]]])
-    print('Predicting for video: ' + video_id)
-    predictFromModel(final_model, list(test_samples.values())[test_video_index], caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)
+    # #print(vocab_word_embeddings[caption_preprocessor.getWordToIndexDict()[tokens[1]]])
+    # print('Predicting for video: ' + video_id)
+    # predictFromModel(final_model, list(test_samples.values())[test_video_index], caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)
+    
+    predictTestSamples(final_model, test_samples, caption_preprocessor.getWordToIndexDict(), caption_preprocessor.getIndexToWordDict(), CAPTION_LEN + 1)
