@@ -90,8 +90,8 @@ def prepareDataset(no_samples=200, train_validation_split=0.2, no_test_samples=1
 def getModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab_size, embedding_weights=None):
     
     #model = lstmModel.getModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab_size, embedding_weights)
-    model = bidirectionLstmModel.getModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab_size, embedding_weights)
-    #model = bidirectionalGruModel.getModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab_size, embedding_weights)
+    model = bidirectionLstmModel.getModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab_size, embedding_weights, dropOutAtFinal=0.3)
+    #model = bidirectionalGruModel.getModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab_size, embedding_weights, dropOutAtFinal=0.3)
 
     optimizer = Adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.99, epsilon=1e-07, amsgrad=True, name='Adam')
     model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
