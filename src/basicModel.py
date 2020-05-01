@@ -1,9 +1,4 @@
-from tensorflow.keras import Input, layers
-from tensorflow.keras.layers import LSTM, Dense, TimeDistributed, Dropout, BatchNormalization, Activation, Bidirectional, GRU, RepeatVector, Embedding, add
-from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam, RMSprop
-from tensorflow.keras.regularizers import l2
-from tensorflow.keras.backend import concatenate
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.utils import to_categorical
 from keras import callbacks
@@ -18,6 +13,9 @@ import util
 import captionPreprocess as cp
 import gloveEmbeddings as ge
 import matplotlib.pyplot as plt
+from models import basicLSTMModel as lstmModel
+from models import bidirectionalLSTMModel as bidirectionLstmModel
+from models import bidirectionalGRUModel as bidirectionalGruModel
 
 def extractVideoInputs(video_frames, no_samples, train_validation_split, no_test_samples):
     train_validation_split = math.floor((no_samples - no_test_samples) * train_validation_split)
@@ -89,53 +87,17 @@ def prepareDataset(no_samples=200, train_validation_split=0.2, no_test_samples=1
     
     return train_samples, val_samples, test_samples, caption_preprocessor, vocab_word_embeddings
 
-def getBasicModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab_size, embedding_weights=None):
-    # Caption input shape is (Captionlen+1, Outputembeddeding_dimension) i.e. (16, 300)
-    # And when we fit, we will do it in batches so currently batch dimension will be (None, 16, 300)
-    cmodel_input = Input(shape=(final_caption_length,), name='caption_input')
-    cmodel_embedding = Embedding(total_vocab_size, embedding_dim, mask_zero=True, name='caption_embedding') (cmodel_input)
-    cmodel_dense = TimeDistributed(Dense(512,kernel_initializer='random_normal')) (cmodel_embedding)
-    #cmodel_dropout = TimeDistributed(Dropout(0.50)) (cmodel_dense)
-    #cmodel_lstm = LSTM(512, return_sequences=True,kernel_initializer='random_normal') (cmodel_dropout)
-    cmodel_lstm = LSTM(512, return_sequences=True,kernel_initializer='random_normal') (cmodel_dense)
-    #cmodel.summary()
+def getModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab_size, embedding_weights=None):
+    
+    #model = lstmModel.getModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab_size, embedding_weights)
+    model = bidirectionLstmModel.getModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab_size, embedding_weights)
+    #model = bidirectionalGruModel.getModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab_size, embedding_weights)
 
-    # Video frames input shape is (number_of_frames, frame_features) i.e. (None, 2048) In case of Video2Description model it is (40, 2048)
-    # And when we fit, we will do it in batches so currently batch dimension will be (None, None, 2048)
-
-    input_shape_vid = video_frame_shape
-    imodel_input = Input(shape=input_shape_vid)
-    imodel_dense = TimeDistributed(Dense(1024, kernel_initializer='random_normal')) (imodel_input)
-    imodel_dropout = TimeDistributed(Dropout(0.2)) (imodel_dense)
-    imodel_batchnorm = TimeDistributed(BatchNormalization(axis=-1)) (imodel_dropout)
-    imodel_active = Activation('tanh') (imodel_batchnorm)
-    #imodel_lstm = LSTM(1024, return_sequences=False, kernel_initializer='random_normal') (imodel_active)
-    imodel_lstm = Bidirectional(LSTM(1024, return_sequences=False, kernel_initializer='random_normal')) (imodel_active)
-    imodel_repeatvector = RepeatVector(final_caption_length) (imodel_lstm)
-
-    combined_model = concatenate([cmodel_lstm, imodel_repeatvector], axis=-1)
-    combined_model_dropout = TimeDistributed(Dropout(0.2)) (combined_model)
-    combined_model_lstm = LSTM(1024,return_sequences=True, kernel_initializer='random_normal',recurrent_regularizer=l2(0.01)) (combined_model_dropout)
-    combined_model_outputs = TimeDistributed(Dense(total_vocab_size, activation='softmax'))(combined_model_lstm)
-
-    # using default optimizer and loss function
-    final_model = Model(inputs=[cmodel_input, imodel_input], outputs= [combined_model_outputs])
-    #final_model.summary()
-    print('Model created successfully')
-    return final_model
-
-def applyEmbeddingsAndCompile(model, embedding_weights):
-    #optimizer = RMSprop(lr=0.0005, rho=0.9, epsilon=1e-8, decay=0)
     optimizer = Adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.99, epsilon=1e-07, amsgrad=True, name='Adam')
-    if embedding_weights is not None:
-        #model_dict = {i: v for i, v in enumerate(model.layers)}
-        #print(model_dict)
-        print('embedding weights found. Set layer to non-trainable')
-        model.layers[5].set_weights([embedding_weights])
-        model.layers[5].trainable = False
     model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
     model.summary()
-    print('Model compiled successfully')
+
+    print('Model created successfully')
     return model
 
 def dataGenerator(training_set, wordtoidx, max_caption_length, num_videos_per_batch, vocab_size, dataset_name='Training'):
@@ -271,12 +233,11 @@ if __name__ == "__main__":
     print('Caption len : ' + str(CAPTION_LEN))
     print('Vocab size : ' + str(VOCAB_SIZE))
     print('Embedding weight matrix shape: ' + str(vocab_word_embeddings.shape))
-    final_model = getBasicModel(CAPTION_LEN + 1, OUTDIM_EMB, video_frame_input_shape, VOCAB_SIZE)
     print('Starting training......')
     train_generator = dataGenerator(train_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 20, VOCAB_SIZE, dataset_name='Training')
     val_generator = dataGenerator(validation_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 10, VOCAB_SIZE, dataset_name='Validation')
     if CONTINUE_TRAINING is True or not os.path.exists(config.TRAINED_MODEL_HDF5_FILE):
-        applyEmbeddingsAndCompile(final_model, vocab_word_embeddings)
+        final_model = getModel(CAPTION_LEN + 1, OUTDIM_EMB, video_frame_input_shape, VOCAB_SIZE, embedding_weights=vocab_word_embeddings)
         if CONTINUE_TRAINING is True:
             print('continuing previous training')
             final_model.load_weights(config.TRAINED_MODEL_HDF5_FILE)
@@ -308,6 +269,7 @@ if __name__ == "__main__":
         plt.legend()
         plt.show()
     else:
+        final_model = getModel(CAPTION_LEN + 1, OUTDIM_EMB, video_frame_input_shape, VOCAB_SIZE)
         final_model.load_weights(config.TRAINED_MODEL_HDF5_FILE)
         print('Trained model weights exported')
     # test_video_index =  3
