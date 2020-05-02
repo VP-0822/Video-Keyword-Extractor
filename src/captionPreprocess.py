@@ -28,7 +28,7 @@ class CaptionPreprocessor:
                 caption_words = caption.split()
                 caption_words = [word.lower() for word in caption_words]
                 caption_words = [word.translate(punctuation_mapping) for word in caption_words]
-                caption_words = [word for word in caption_words if len(word)>1]
+                #caption_words = [word for word in caption_words if len(word)>1]
                 caption_words = [word for word in caption_words if word.isalpha()]
                 cleaned_caption_inputs[id].append(' '.join(caption_words))
                 self.caption_max_length = max(self.caption_max_length, len(caption_words))

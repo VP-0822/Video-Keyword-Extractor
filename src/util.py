@@ -1,7 +1,7 @@
 import os
 
 def writeArrayToFile(filepath, arrayToWrite):
-    with open(filepath, "w") as txt_file:
+    with open(filepath, "w", encoding="utf-8") as txt_file:
         for line in arrayToWrite:
             txt_file.write(line + "\n")
 
@@ -14,7 +14,7 @@ def readArrayFromFile(filepath):
     return return_array
 
 def writeLossAndAccuracyToFile(filepath, noOfEpochs, trainingLoss, validationLoss, trainingAcc, validationAcc):
-    with open(filepath, "w") as outfile:
+    with open(filepath, "w", encoding="utf-8") as outfile:
         outfile.write('Number of Epochs: ' + str(noOfEpochs))
         outfile.write('\n\n')
 

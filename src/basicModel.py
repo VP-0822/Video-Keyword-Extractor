@@ -13,26 +13,28 @@ import util
 import captionPreprocess as cp
 import gloveEmbeddings as ge
 import matplotlib.pyplot as plt
+import random
+import tqdm
 from models import basicLSTMModel as lstmModel
 from models import bidirectionalLSTMModel as bidirectionLstmModel
 from models import bidirectionalGRUModel as bidirectionalGruModel
 
-def extractVideoInputs(video_frames, no_samples, train_validation_split, no_test_samples):
-    train_validation_split = math.floor((no_samples - no_test_samples) * train_validation_split)
+def extractVideoInputs(video_frames, no_samples, train_test_split, no_validation_samples):
+    train_test_split = math.floor((no_samples - no_validation_samples) * train_test_split)
     train_samples = dict()
     val_samples = dict()
     test_samples = dict()
 
     if not os.path.exists(config.TRAINING_VIDEOID_FILE):
-        validation_size_counter = 0
+        test_size_counter = 0
         train_size_counter = 0
         for key in video_frames.keys():
-            if (validation_size_counter + train_size_counter) == (no_samples - no_test_samples):
-                test_samples[key] = [video_frames[key]]
-                continue
-            if(validation_size_counter < train_validation_split):
+            if (test_size_counter + train_size_counter) == (no_samples - no_validation_samples):
                 val_samples[key] = [video_frames[key]]
-                validation_size_counter += 1
+                continue
+            if(test_size_counter < train_test_split):
+                test_samples[key] = [video_frames[key]]
+                test_size_counter += 1
                 continue
             train_samples[key] = [video_frames[key]]
             train_size_counter += 1
@@ -51,17 +53,21 @@ def extractVideoInputs(video_frames, no_samples, train_validation_split, no_test
             if key in testing_video_id_list:
                 test_samples[key] = [video_frames[key]]
     
-    print('Number of Training samples: ' + str(len(train_samples)))
-    print('Number of Validation samples: ' + str(len(val_samples)))
-    print('Number of Testing samples: ' + str(len(test_samples)))
+    print('Number of Training videos: ' + str(len(train_samples)))
+    print('Number of Validation videos: ' + str(len(val_samples)))
+    print('Number of Testing videos: ' + str(len(test_samples)))
     return train_samples, val_samples, test_samples
 
-
-def prepareDataset(no_samples=200, train_validation_split=0.2, no_test_samples=15, video_ids=None):
+def prepareDataset(no_samples=200, train_test_split=0.15, no_validation_samples=50, video_ids=None):
     video_frames = vff.loadVideoFrameFeatures(config.PICKLE_FILE_PATH, no_samples, video_ids)
     print('video frame features loaded')
     
-    train_samples, val_samples, test_samples = extractVideoInputs(video_frames, no_samples, train_validation_split, no_test_samples)
+    train_samples, val_samples, test_samples = extractVideoInputs(video_frames, no_samples, train_test_split, no_validation_samples)
+    
+    all_video_ids = list(test_samples.keys())
+    all_video_ids.extend(list(train_samples.keys()))
+    all_video_ids.extend(list(val_samples.keys()))
+    
     final_video_ids = list(train_samples.keys())
     final_video_ids.extend(list(val_samples.keys()))
 
@@ -85,7 +91,39 @@ def prepareDataset(no_samples=200, train_validation_split=0.2, no_test_samples=1
     for key, value in test_video_captions.items():
         test_samples[key].append(value)
     
-    return train_samples, val_samples, test_samples, caption_preprocessor, vocab_word_embeddings
+    final_train_samples, final_val_samples = getExpandedTrainAndValidationSet(train_samples, val_samples)
+
+    return final_train_samples, final_val_samples, test_samples, all_video_ids, caption_preprocessor, vocab_word_embeddings
+
+# This method returns expanded train and validation set across different videos
+def getExpandedTrainAndValidationSet(train_samples, validation_samples):
+    final_train_samples = dict()
+    for key, value in train_samples.items():
+        # Value is list with index 0 as frame_inputs and index 1 as all_video_captions
+        for index, caption in enumerate(value[1]):
+            sample_key = key + '^' + str(index + 1)
+            final_train_samples[sample_key] = [value[0], caption]
+    train_keys = list(final_train_samples.keys())
+    random.shuffle(train_keys)
+    shuffled_train_samples = dict()
+    for key in train_keys:
+        shuffled_train_samples[key] = final_train_samples[key]
+    
+    final_val_samples = dict()
+    for key, value in validation_samples.items():
+        # Value is list with index 0 as frame_inputs and index 1 as all_video_captions
+        for index, caption in enumerate(value[1]):
+            sample_key = key + '^' + str(index + 1)
+            final_val_samples[sample_key] = [value[0], caption]
+    val_keys = list(final_val_samples.keys())
+    random.shuffle(val_keys)
+    shuffled_val_samples = dict()
+    for key in val_keys:
+        shuffled_val_samples[key] = final_val_samples[key]
+    
+    print('Expanded train samples: ' + str(len(shuffled_train_samples)))
+    print('Expanded validation samples: ' + str(len(shuffled_val_samples)))
+    return shuffled_train_samples, shuffled_val_samples
 
 def getModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab_size, embedding_weights=None):
     
@@ -100,36 +138,34 @@ def getModel(final_caption_length, embedding_dim, video_frame_shape, total_vocab
     print('Model created successfully')
     return model
 
-def dataGenerator(training_set, wordtoidx, max_caption_length, num_videos_per_batch, vocab_size, dataset_name='Training'):
+def dataGenerator(training_set, wordtoidx, max_caption_length, num_samples_per_batch, vocab_size, dataset_name='Training'):
     # x1 - Training data for videos
     # x2 - The caption that goes with each photo
     # y - The predicted rest of the caption
     x1, x2, y = [], [], []
-    current_batch_item_count=1
+    current_batch_item_count=0
     #print('Dataset name: ' + dataset_name)
     while True:
         for key, values in training_set.items():
             current_batch_item_count+=1
             frame_features = values[0]
             single_video_captions = values[1]
-            video_id = key
-            for caption_item in single_video_captions:
-                in_caption_item = f'{cp.START_KEYWORD} {caption_item}'
-                in_seq = [wordtoidx[word] for word in in_caption_item.split(' ') if word in wordtoidx]
-                for i in range(max_caption_length-len(in_seq)):
-                    in_seq.append(wordtoidx[cp.NONE_KEYWORD])
+            in_caption_item = f'{cp.START_KEYWORD} {single_video_captions}'
+            in_seq = [wordtoidx[word] for word in in_caption_item.split(' ') if word in wordtoidx]
+            for i in range(max_caption_length-len(in_seq)):
+                in_seq.append(wordtoidx[cp.NONE_KEYWORD])
 
-                out_caption_item = f'{caption_item} {cp.STOP_KEYWORD}'
-                out_caption_seq = [wordtoidx[word] for word in out_caption_item.split(' ') if word in wordtoidx]
-                for i in range(max_caption_length-len(out_caption_seq)):
-                    out_caption_seq.append(wordtoidx[cp.NONE_KEYWORD])
-                out_seq = list()
-                for count in range(max_caption_length):
-                    out_seq.append(to_categorical([out_caption_seq[count]], num_classes=vocab_size)[0])
-                x1.append(in_seq)
-                x2.append(frame_features)
-                y.append(out_seq)
-            if current_batch_item_count==num_videos_per_batch:
+            out_caption_item = f'{single_video_captions} {cp.STOP_KEYWORD}'
+            out_caption_seq = [wordtoidx[word] for word in out_caption_item.split(' ') if word in wordtoidx]
+            for i in range(max_caption_length-len(out_caption_seq)):
+                out_caption_seq.append(wordtoidx[cp.NONE_KEYWORD])
+            out_seq = list()
+            for count in range(max_caption_length):
+                out_seq.append(to_categorical([out_caption_seq[count]], num_classes=vocab_size)[0])
+            x1.append(in_seq)
+            x2.append(frame_features)
+            y.append(out_seq)
+            if current_batch_item_count==num_samples_per_batch:
                 # print('##########################')
                 # print('Dataset name: ' + dataset_name)
                 # print("=== x1 ***********************************====") 
@@ -149,7 +185,6 @@ def predictFromModel(model, video_sample, wordtoidx, idxtoword, max_caption_leng
     dummy_caption.extend([cp.STOP_KEYWORD] * (max_caption_length - 1))
     #dummy_caption = f'{cp.START_KEYWORD} {original_video_caption_input}'
     video_dummy_caption = [wordtoidx[word] for word in dummy_caption if word in wordtoidx]
-    # video_dummy_caption = [wordtoidx[word] for word in dummy_caption.split(' ') if word in wordtoidx]
     # for i in range(max_caption_length-len(video_dummy_caption)):
     #     video_dummy_caption.append(wordtoidx[cp.NONE_KEYWORD])
     #print(video_dummy_caption)
@@ -172,19 +207,27 @@ def predictFromModel(model, video_sample, wordtoidx, idxtoword, max_caption_leng
             input_seq_list[0][caption_length_counter+1] = wordtoidx[word]
         caption_length_counter += 1
         #for i, newOneHotWord in enumerate()
-    print('Prediction done!')
     output_caption_text = ' '.join(output_caption)
-    print('[Original caption]:')
-    print(original_video_caption_input)
-    print('[Predicted caption]:')
-    print(output_caption_text)
+    return original_video_caption_input, output_caption_text
 
 def predictTestSamples(model, testSampleSet, wordtoidx, idxtoword, max_caption_length):
-    for key, values in testSampleSet.items():
+    all_prediction_statements = []
+    all_prediction_statements.append('Video Id,Original caption,Predicted caption')
+    print('Predicting test samples...')
+    for key, values in tqdm.tqdm(testSampleSet.items()):
         video_id = key
-        print('Predicting for video: ' + video_id)
-        predictFromModel(model, values, wordtoidx, idxtoword, max_caption_length)
-        print('###########')
+        original_video_caption_input, output_caption_text = predictFromModel(model, values, wordtoidx, idxtoword, max_caption_length)
+        # print('Predicting for video: ' + video_id)
+        csv_line = video_id
+        # print('[Original caption]:')
+        # print(original_video_caption_input)
+        csv_line += ',' + original_video_caption_input
+        # print('[Predicted caption]:')
+        # print(output_caption_text)
+        csv_line += ',' + output_caption_text
+        # print('###########')
+        all_prediction_statements.append(csv_line)
+    util.writeArrayToFile(config.TEST_SET_PREDICTION_CSV_FILE, all_prediction_statements)
 
 class BasicModelCallback(callbacks.Callback):
     def __init__(self, final_model, folderName):
@@ -219,23 +262,18 @@ if __name__ == "__main__":
         video_ids = np.load(config.TRAINED_VIDEO_ID_NPY_FILE)
         print('video_ids loaded')
         print(len(video_ids))
-    train_samples, validation_samples, test_samples, caption_preprocessor, vocab_word_embeddings = prepareDataset(no_samples=915, video_ids=video_ids)
-    # print(train_samples.keys())
-    # print(test_samples.keys())
-    all_video_ids = list(validation_samples.keys())
-    all_video_ids.extend(list(train_samples.keys()))
-    all_video_ids.extend(list(test_samples.keys()))
-    # print(train_samples_list[0][1])
+    train_samples, validation_samples, test_samples, all_video_ids, caption_preprocessor, vocab_word_embeddings = prepareDataset(no_samples=915, video_ids=video_ids)
     CAPTION_LEN = caption_preprocessor.caption_max_length
     OUTDIM_EMB = 200
     video_frame_input_shape = (None,2048)
-    VOCAB_SIZE = caption_preprocessor.getVocabSize() + 1
+    VOCAB_SIZE = caption_preprocessor.getVocabSize()
     print('Caption len : ' + str(CAPTION_LEN))
     print('Vocab size : ' + str(VOCAB_SIZE))
     print('Embedding weight matrix shape: ' + str(vocab_word_embeddings.shape))
     print('Starting training......')
-    train_generator = dataGenerator(train_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 20, VOCAB_SIZE, dataset_name='Training')
-    val_generator = dataGenerator(validation_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 10, VOCAB_SIZE, dataset_name='Validation')
+    # not batch size cannot be less than number of captions per video 
+    train_generator = dataGenerator(train_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 92, VOCAB_SIZE, dataset_name='Training')
+    val_generator = dataGenerator(validation_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 50, VOCAB_SIZE, dataset_name='Validation')
     if CONTINUE_TRAINING is True or not os.path.exists(config.TRAINED_MODEL_HDF5_FILE):
         final_model = getModel(CAPTION_LEN + 1, OUTDIM_EMB, video_frame_input_shape, VOCAB_SIZE, embedding_weights=vocab_word_embeddings)
         if CONTINUE_TRAINING is True:
@@ -243,8 +281,8 @@ if __name__ == "__main__":
             final_model.load_weights(config.TRAINED_MODEL_HDF5_FILE)
         all_video_ids_np = np.asarray(all_video_ids)
         np.save(config.TRAINED_VIDEO_ID_NPY_FILE, all_video_ids_np)
-        history = final_model.fit_generator(train_generator, steps_per_epoch=36, epochs=NO_EPOCHS,
-                                 verbose=1, validation_data=val_generator, validation_steps=18,
+        history = final_model.fit_generator(train_generator, steps_per_epoch=32, epochs=NO_EPOCHS,
+                                 verbose=1, validation_data=val_generator, validation_steps=4,
                                  initial_epoch=0, callbacks=[BasicModelCallback(final_model, config.TRAINED_MODEL_FOLDER)])
         final_model.save_weights(config.TRAINED_MODEL_HDF5_FILE)
 

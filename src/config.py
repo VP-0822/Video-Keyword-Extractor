@@ -14,3 +14,4 @@ TRAINING_VIDEOID_FILE = os.path.join(root_dir,'../data/output/training.videoid.t
 VALIDATION_VIDEOID_FILE = os.path.join(root_dir,'../data/output/validation.videoid.text')
 TESTING_VIDEOID_FILE = os.path.join(root_dir,'../data/output/testing.videoid.text')
 LOSS_ACCURACY_FILE = os.path.join(root_dir,'../data/output/lossAndAccuracy.text')
+TEST_SET_PREDICTION_CSV_FILE = os.path.join(root_dir,'../data/output/testsetPrediction.csv')

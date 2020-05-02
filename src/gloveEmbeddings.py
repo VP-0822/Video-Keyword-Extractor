@@ -20,7 +20,7 @@ class GloveEmbedding(embeddingInterface.EmbeddingInterface):
         vector_file.close()
 
     def getEmbeddingVectorFor(self, word_list, vocab_size):
-        self.select_word_embedding_matrix = np.zeros((vocab_size + 1, self.embedding_dimension))
+        self.select_word_embedding_matrix = np.zeros((vocab_size, self.embedding_dimension))
         for index, word in enumerate(word_list):
             embedding_vector = self.embeddings_index.get(word)
             if embedding_vector is not None:
