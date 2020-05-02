@@ -37,7 +37,7 @@ def filterCaptionsForSamples(caption_file, video_ids=None, load_single_caption=T
                     filteredCaptions[videoId] = all_video_captions[-caption_per_video_limit:]
             else:
                 filteredCaptions[videoId] = all_english_captions[videoId]
-            random.shuffle(filteredCaptions[videoId])
+            #random.shuffle(filteredCaptions[videoId])
             continue
         max_length_caption = None
         max_length = 0
@@ -46,7 +46,7 @@ def filterCaptionsForSamples(caption_file, video_ids=None, load_single_caption=T
                 max_length_caption = caption
                 max_length = len(caption.split(' '))
         filteredCaptions[videoId] = [max_length_caption]
-        random.shuffle(filteredCaptions[videoId])
+        #random.shuffle(filteredCaptions[videoId])
     return filteredCaptions
 
 if __name__ == '__main__':

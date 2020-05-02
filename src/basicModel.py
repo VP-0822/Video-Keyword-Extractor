@@ -121,6 +121,27 @@ def getExpandedTrainAndValidationSet(train_samples, validation_samples):
     for key in val_keys:
         shuffled_val_samples[key] = final_val_samples[key]
     
+    if os.path.exists(config.TRAINING_ORDER_VIDEO_ID_FILE):
+        temp_train_samples = dict()
+        temp_val_samples = dict()
+        print('Following the previous training order')
+        trainedVideoSampleIds = util.readArrayFromFile(config.TRAINING_ORDER_VIDEO_ID_FILE)
+        for videoId in trainedVideoSampleIds:
+            if videoId in shuffled_train_samples.keys():
+                temp_train_samples[videoId] = shuffled_train_samples[videoId]
+                continue
+            if videoId in shuffled_val_samples.keys():
+                temp_val_samples[videoId] = shuffled_val_samples[videoId]
+                continue
+        shuffled_train_samples = temp_train_samples
+        shuffled_val_samples = temp_val_samples
+    else:
+        trainingSampleOrder = list()
+        trainingSampleOrder.extend(list(shuffled_train_samples.keys()))
+        trainingSampleOrder.extend(list(shuffled_val_samples.keys()))
+        util.writeArrayToFile(config.TRAINING_ORDER_VIDEO_ID_FILE, trainingSampleOrder)
+        print('Saved training sample order for continuing training')
+
     print('Expanded train samples: ' + str(len(shuffled_train_samples)))
     print('Expanded validation samples: ' + str(len(shuffled_val_samples)))
     return shuffled_train_samples, shuffled_val_samples
@@ -256,7 +277,7 @@ class BasicModelCallback(callbacks.Callback):
 
 if __name__ == "__main__":
     video_ids = None
-    CONTINUE_TRAINING = False
+    CONTINUE_TRAINING = True
     NO_EPOCHS = 100
     if os.path.exists(config.TRAINED_VIDEO_ID_NPY_FILE):
         video_ids = np.load(config.TRAINED_VIDEO_ID_NPY_FILE)
