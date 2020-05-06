@@ -39,20 +39,17 @@ def filterCaptionsForSamples(caption_file, video_ids=None, load_single_caption=T
                 filteredCaptions[videoId] = all_english_captions[videoId]
             #random.shuffle(filteredCaptions[videoId])
             continue
-        max_length_caption = None
-        max_length = 0
-        for caption in all_english_captions[videoId]:
-            if len(caption.split(' ')) > max_length:
-                max_length_caption = caption
-                max_length = len(caption.split(' '))
-        filteredCaptions[videoId] = [max_length_caption]
+        all_video_captions = all_english_captions[videoId]
+        all_video_captions.sort(key = lambda s: len(s.split(' ')))
+        video_captions_len = len(all_video_captions)
+        filteredCaptions[videoId] = [all_video_captions[video_captions_len-3]]
         #random.shuffle(filteredCaptions[videoId])
     return filteredCaptions
 
 if __name__ == '__main__':
     #allCaptions = loadCaptionData(config.CSV_FILE_PATH)
-    #allCaptions = filterCaptionsForSamples(config.CSV_FILE_PATH, ['ibSwITK4jjQ_14_24'], load_single_caption=False)
-    allCaptions = filterCaptionsForSamples(config.CSV_FILE_PATH, load_single_caption=False)    
+    #allCaptions = filterCaptionsForSamples(config.CSV_FILE_PATH, ['ibSwITK4jjQ_14_24'], load_single_caption=True)
+    allCaptions = filterCaptionsForSamples(config.CSV_FILE_PATH, load_single_caption=True)    
     print(len(allCaptions))
     print(len(allCaptions['ibSwITK4jjQ_14_24']))
     print(len(allCaptions['ibSwITK4jjQ_14_24'][0]))

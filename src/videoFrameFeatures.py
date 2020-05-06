@@ -39,7 +39,7 @@ def loadVideoFrameFeatures(pickleFilePath, numberOfVideos=None, video_ids=None):
     return random_videos_frames
 
 if __name__ == "__main__":
-    sample_videos = loadVideoFrameFeatures(config.PICKLE_FILE_PATH, 400)
+    sample_videos = loadVideoFrameFeatures(config.PICKLE_FILE_PATH)
     print(len(sample_videos.keys()))
     first_key = list(sample_videos.keys())[5]
     print(np.shape(sample_videos[first_key]))   

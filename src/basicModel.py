@@ -71,7 +71,7 @@ def prepareDataset(no_samples=200, train_test_split=0.15, no_validation_samples=
     final_video_ids = list(train_samples.keys())
     final_video_ids.extend(list(val_samples.keys()))
 
-    video_captions = y2tc.filterCaptionsForSamples(config.CSV_FILE_PATH, final_video_ids, load_single_caption=False)
+    video_captions = y2tc.filterCaptionsForSamples(config.CSV_FILE_PATH, final_video_ids, load_single_caption=True)
     print('video captions loaded')
     caption_preprocessor = cp.CaptionPreprocessor(video_captions, word_freq_threshold=2)
     print('Final word count: ' + str(caption_preprocessor.getVocabSize()))
@@ -277,13 +277,19 @@ class BasicModelCallback(callbacks.Callback):
 
 if __name__ == "__main__":
     video_ids = None
-    CONTINUE_TRAINING = True
+    CONTINUE_TRAINING = False
     NO_EPOCHS = 100
+    # For Single caption per video
+    STEPS_FOR_TRAIN_SAMPLES = 48
+    STEPS_FOR_VALIDATION_SAMPLES = 4
+    # # For multiple captions per video (4 captions)
+    # STEPS_FOR_TRAIN_SAMPLES = 96
+    # STEPS_FOR_VALIDATION_SAMPLES = 4
     if os.path.exists(config.TRAINED_VIDEO_ID_NPY_FILE):
         video_ids = np.load(config.TRAINED_VIDEO_ID_NPY_FILE)
         print('video_ids loaded')
         print(len(video_ids))
-    train_samples, validation_samples, test_samples, all_video_ids, caption_preprocessor, vocab_word_embeddings = prepareDataset(no_samples=915, video_ids=video_ids)
+    train_samples, validation_samples, test_samples, all_video_ids, caption_preprocessor, vocab_word_embeddings = prepareDataset(no_samples=1969, video_ids=video_ids)
     CAPTION_LEN = caption_preprocessor.caption_max_length
     OUTDIM_EMB = 200
     video_frame_input_shape = (None,2048)
@@ -302,8 +308,8 @@ if __name__ == "__main__":
             final_model.load_weights(config.TRAINED_MODEL_HDF5_FILE)
         all_video_ids_np = np.asarray(all_video_ids)
         np.save(config.TRAINED_VIDEO_ID_NPY_FILE, all_video_ids_np)
-        history = final_model.fit_generator(train_generator, steps_per_epoch=32, epochs=NO_EPOCHS,
-                                 verbose=1, validation_data=val_generator, validation_steps=4,
+        history = final_model.fit_generator(train_generator, steps_per_epoch=STEPS_FOR_TRAIN_SAMPLES, epochs=NO_EPOCHS,
+                                 verbose=1, validation_data=val_generator, validation_steps=STEPS_FOR_VALIDATION_SAMPLES,
                                  initial_epoch=0, callbacks=[BasicModelCallback(final_model, config.TRAINED_MODEL_FOLDER)])
         final_model.save_weights(config.TRAINED_MODEL_HDF5_FILE)
 
