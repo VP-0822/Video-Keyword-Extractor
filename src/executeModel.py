@@ -20,13 +20,14 @@ TRAIN_TEST_SPLIT = 0.15
 NUMBER_OF_VALIDATION_SAMPLES = 50
 EMBEDDING_DIM = 200
 CAPTIONS_PER_VIDEO = 4
+WORD_FREQ_THRESHOLD=3
 SHUFFLE_SAMPLES = False
 datasetPreprocessor = DatasetPreprocessor(NUMBER_OF_SAMPLES, TRAIN_TEST_SPLIT, NUMBER_OF_VALIDATION_SAMPLES, sample_video_ids)
 # pickleFileList = [config.PICKLE_FILE_PATH]
 pickleFileList = [config.PICKLE_FILE_PART_1_PATH, config.PICKLE_FILE_PART_2_PATH, config.PICKLE_FILE_PART_3_PATH]
 datasetPreprocessor.loadVideoFeatureSamples(pickleFileList)
 datasetPreprocessor.splitIntoTrainTestAndValidation(config.TRAINING_VIDEOID_FILE, config.TESTING_VIDEOID_FILE, config.VALIDATION_VIDEOID_FILE)
-datasetPreprocessor.attachInputCaptionsToVideos(config.CSV_FILE_PATH, config.GLOVE_200_DIM_FILE, EMBEDDING_DIM, CAPTIONS_PER_VIDEO)
+datasetPreprocessor.attachInputCaptionsToVideos(config.CSV_FILE_PATH, config.GLOVE_200_DIM_FILE, EMBEDDING_DIM, CAPTIONS_PER_VIDEO, word_freq_threshold=WORD_FREQ_THRESHOLD)
 datasetPreprocessor.expandTrainAndValidationSet(config.TRAINING_ORDER_VIDEO_ID_FILE,SHUFFLE_SAMPLES)
 
 trainSamples = datasetPreprocessor.getTrainSamples()

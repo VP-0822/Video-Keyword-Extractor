@@ -58,7 +58,7 @@ class DatasetPreprocessor:
         print('Number of Validation videos: ' + str(len(self.val_samples)))
         print('Number of Testing videos: ' + str(len(self.test_samples)))
     
-    def attachInputCaptionsToVideos(self, captionSourceFile, embeddingSourceFile, embeddingDimension, captionsPerVideo):
+    def attachInputCaptionsToVideos(self, captionSourceFile, embeddingSourceFile, embeddingDimension, captionsPerVideo, word_freq_threshold=2):
         final_video_ids = list(self.train_samples.keys())
         final_video_ids.extend(list(self.val_samples.keys()))
 
@@ -66,7 +66,7 @@ class DatasetPreprocessor:
         y2tc = Youtube2TextCaptions(captionSourceFile, final_video_ids, captionsPerVideo)
         video_captions = y2tc.getFilteredCaptions()
         print('video captions loaded')
-        self.caption_preprocessor = CaptionPreprocessor(video_captions,word_freq_threshold=2)
+        self.caption_preprocessor = CaptionPreprocessor(video_captions,word_freq_threshold=word_freq_threshold)
         print('Final word count: ' + str(self.caption_preprocessor.getVocabSize()))
         #print(caption_preprocessor.getCaptionsVocabList())
         print('video captions preprocessed')
