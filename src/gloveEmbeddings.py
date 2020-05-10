@@ -1,8 +1,7 @@
 import numpy as np
-import embeddingInterface
-import config
+import os
 
-class GloveEmbedding(embeddingInterface.EmbeddingInterface):
+class GloveEmbedding():
     def __init__(self, embedding_vector_file, embedding_dimension):
         self.embedding_vector_file = embedding_vector_file
         self.embedding_dimension = embedding_dimension
@@ -32,7 +31,9 @@ class GloveEmbedding(embeddingInterface.EmbeddingInterface):
         return self.select_word_embedding_matrix
 
 if __name__ == "__main__":
-    ge = GloveEmbedding(config.GLOVE_200_DIM_FILE, 200)   
+    root_dir = os.path.dirname(__file__)
+    GLOVE_200_DIM_FILE = os.path.join(root_dir,'../data/glove/glove.6B.200d.txt')
+    ge = GloveEmbedding(GLOVE_200_DIM_FILE, 200)   
     print(len(ge.embeddings_index))
     ge_embedd = ge.embeddings_index.get('woman')
     my_embedd = ge.getEmbeddingVectorFor(['woman'], 1)

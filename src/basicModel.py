@@ -59,7 +59,10 @@ def extractVideoInputs(video_frames, no_samples, train_test_split, no_validation
     return train_samples, val_samples, test_samples
 
 def prepareDataset(no_samples=200, train_test_split=0.15, no_validation_samples=50, video_ids=None):
-    video_frames = vff.loadVideoFrameFeatures(config.PICKLE_FILE_PATH, no_samples, video_ids)
+    # uncomment below for loading from single pickle file
+    # video_frames = vff.loadVideoFrameFeatures(False, no_samples, video_ids)
+    
+    video_frames = vff.loadVideoFrameFeatures(True, no_samples, video_ids)
     print('video frame features loaded')
     
     train_samples, val_samples, test_samples = extractVideoInputs(video_frames, no_samples, train_test_split, no_validation_samples)
@@ -91,12 +94,12 @@ def prepareDataset(no_samples=200, train_test_split=0.15, no_validation_samples=
     for key, value in test_video_captions.items():
         test_samples[key].append(value)
     
-    final_train_samples, final_val_samples = getExpandedTrainAndValidationSet(train_samples, val_samples)
+    final_train_samples, final_val_samples = getExpandedTrainAndValidationSet(train_samples, val_samples, shuffle_dataset=False)
 
     return final_train_samples, final_val_samples, test_samples, all_video_ids, caption_preprocessor, vocab_word_embeddings
 
 # This method returns expanded train and validation set across different videos
-def getExpandedTrainAndValidationSet(train_samples, validation_samples):
+def getExpandedTrainAndValidationSet(train_samples, validation_samples, shuffle_dataset=True):
     final_train_samples = dict()
     for key, value in train_samples.items():
         # Value is list with index 0 as frame_inputs and index 1 as all_video_captions
@@ -104,7 +107,8 @@ def getExpandedTrainAndValidationSet(train_samples, validation_samples):
             sample_key = key + '^' + str(index + 1)
             final_train_samples[sample_key] = [value[0], caption]
     train_keys = list(final_train_samples.keys())
-    random.shuffle(train_keys)
+    if shuffle_dataset is True:
+        random.shuffle(train_keys)
     shuffled_train_samples = dict()
     for key in train_keys:
         shuffled_train_samples[key] = final_train_samples[key]
@@ -116,7 +120,8 @@ def getExpandedTrainAndValidationSet(train_samples, validation_samples):
             sample_key = key + '^' + str(index + 1)
             final_val_samples[sample_key] = [value[0], caption]
     val_keys = list(final_val_samples.keys())
-    random.shuffle(val_keys)
+    if shuffle_dataset is True:
+        random.shuffle(val_keys)
     shuffled_val_samples = dict()
     for key in val_keys:
         shuffled_val_samples[key] = final_val_samples[key]
@@ -298,7 +303,7 @@ if __name__ == "__main__":
     print('Vocab size : ' + str(VOCAB_SIZE))
     print('Embedding weight matrix shape: ' + str(vocab_word_embeddings.shape))
     print('Starting training......')
-    # not batch size cannot be less than number of captions per video 
+    # note batch size cannot be less than number of captions per video 
     train_generator = dataGenerator(train_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 92, VOCAB_SIZE, dataset_name='Training')
     val_generator = dataGenerator(validation_samples, caption_preprocessor.getWordToIndexDict(), CAPTION_LEN + 1, 50, VOCAB_SIZE, dataset_name='Validation')
     if CONTINUE_TRAINING is True or not os.path.exists(config.TRAINED_MODEL_HDF5_FILE):

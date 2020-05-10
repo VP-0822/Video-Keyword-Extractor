@@ -80,7 +80,6 @@ class CaptionPreprocessor:
             self.word_to_index[word] = index
             index += 1
 
-        # adding 1 to vocab size as we have 0 index reserved for dummy values
         self.final_vocab_size = len(self.index_to_word)
 
     def getVocabSize(self):
@@ -99,6 +98,10 @@ class CaptionPreprocessor:
         if word in self.word_to_index.keys():
             return word
         return EXTRA_KEYWORD
+    
+    def getMaximumCaptionLength(self):
+        # adding 1 to vocab size as we have 0 index reserved for dummy values
+        return self.caption_max_length + 1
     
 
 

@@ -4,6 +4,9 @@ CSV_FILE_PATH = os.path.join(root_dir, '../data/youtube2TextCaptions/MSR_Video_D
 
 NPZ_VIDEO_FEATURE_FILE = os.path.join(root_dir, '../data/videoFeatures')
 PICKLE_FILE_PATH = os.path.join(root_dir,'../data/videoFeaturesPickle/all_video_frames.pkl')
+PICKLE_FILE_PART_1_PATH = os.path.join(root_dir,'../data/videoFeaturesPickle/all_video_frames_part1.pkl')
+PICKLE_FILE_PART_2_PATH = os.path.join(root_dir,'../data/videoFeaturesPickle/all_video_frames_part2.pkl')
+PICKLE_FILE_PART_3_PATH = os.path.join(root_dir,'../data/videoFeaturesPickle/all_video_frames_part3.pkl')
 
 GLOVE_200_DIM_FILE = os.path.join(root_dir,'../data/glove/glove.6B.200d.txt')
 
