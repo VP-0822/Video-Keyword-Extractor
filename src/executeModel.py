@@ -42,7 +42,7 @@ np.save(config.TRAINED_VIDEO_ID_NPY_FILE, all_video_ids_np)
 ONLY_PREDICT = False
 CONTINUE_TRAINING = False
 VIDEO_INPUT_SHAPE = (None,2048)
-NO_EPOCHS = 1
+NO_EPOCHS = 100
 # For Single caption per video
 # STEPS_FOR_TRAIN_SAMPLES = 48
 # TRAINING_BATCH_SIZE = 34
