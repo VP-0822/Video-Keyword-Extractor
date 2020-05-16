@@ -88,10 +88,10 @@ class BidirectionalLSTMModel(CaptionFrameModel):
             csv_line = video_id
             # print('[Original caption]:')
             # print(original_video_caption_input)
-            csv_line += ',' + original_video_caption_input
+            csv_line += '|' + original_video_caption_input
             # print('[Predicted caption]:')
             # print(output_caption_text)
-            csv_line += ',' + output_caption_text
+            csv_line += '|' + output_caption_text
             # print('###########')
             all_prediction_statements.append(csv_line)
         return all_prediction_statements
