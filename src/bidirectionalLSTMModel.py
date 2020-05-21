@@ -5,6 +5,7 @@ from tensorflow.keras.backend import concatenate
 from tensorflow.keras.regularizers import l2
 from captionFrameModel import CaptionFrameModel
 from modelCallback import BasicModelCallback
+from simpleAttention import Attention
 import tqdm
 class BidirectionalLSTMModel(CaptionFrameModel):
     def __init__(self, captionPreprocessor, embedding_vector_dim, video_frame_shape, embedding_weights=None, dropOutAtFrame=0.2, dropOutAtCaption=None, dropOutAtFinal=0.2):
@@ -17,7 +18,7 @@ class BidirectionalLSTMModel(CaptionFrameModel):
         self.captionPreprocessor = captionPreprocessor
         super().__init__(self.captionPreprocessor.getMaximumCaptionLength(), self.captionPreprocessor.getVocabSize())
 
-    def buildModel(self):
+    def buildModel(self, use_attention=False):
         # Caption input shape is (Captionlen+1, Outputembeddeding_dimension) i.e. (16, 300)
         # And when we fit, we will do it in batches so currently batch dimension will be (None, 16, 300)
         cmodel_input = Input(shape=(self.final_caption_length,), name='caption_input')
@@ -37,7 +38,11 @@ class BidirectionalLSTMModel(CaptionFrameModel):
         imodel_dropout = TimeDistributed(Dropout(self.dropOutAtFrame, name='frame_dropuout')) (imodel_dense)
         imodel_batchnorm = TimeDistributed(BatchNormalization(axis=-1, name='frame_batchnorm')) (imodel_dropout)
         imodel_active = Activation('tanh', name='frame_tanh_activation') (imodel_batchnorm)
-        imodel_lstm = Bidirectional(LSTM(1024, return_sequences=False, kernel_initializer='random_normal', name='frame_bidirectional_lstm')) (imodel_active)
+        if use_attention is True:
+            imodel_lstm = Bidirectional(LSTM(1024, return_sequences=True, kernel_initializer='random_normal', name='frame_bidirectional_lstm')) (imodel_active)
+            imodel_lstm = Attention() (imodel_lstm)
+        else:
+            imodel_lstm = Bidirectional(LSTM(1024, return_sequences=False, kernel_initializer='random_normal', name='frame_bidirectional_lstm')) (imodel_active)
         imodel_repeatvector = RepeatVector(self.final_caption_length, name='frame_repeatvector') (imodel_lstm)
 
         combined_model = concatenate([cmodel_lstm, imodel_repeatvector], axis=-1)
