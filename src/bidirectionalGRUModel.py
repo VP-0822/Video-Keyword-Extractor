@@ -55,9 +55,14 @@ class BidirectionalGRUModel(CaptionFrameModel):
         final_model = Model(inputs=[cmodel_input, imodel_input], outputs= [combined_model_outputs])
 
         if self.embedding_weights is not None:
+            if use_attention is True:
+                embedding_layer_index = 6
+            else:
+                embedding_layer_index = 5
             print('embedding weights found. Set layer to non-trainable')
-            final_model.layers[5].set_weights([self.embedding_weights])
-            final_model.layers[5].trainable = False
+            final_model.layers[embedding_layer_index].set_weights([self.embedding_weights])
+            final_model.layers[embedding_layer_index].trainable = False
+            
         self.model = final_model
     
     def compileModel(self, optimizer):

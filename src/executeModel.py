@@ -42,8 +42,9 @@ np.save(config.TRAINED_VIDEO_ID_NPY_FILE, all_video_ids_np)
 # Create Model
 ONLY_PREDICT = False
 CONTINUE_TRAINING = False
-VIDEO_INPUT_SHAPE = (None,2048)
-NO_EPOCHS = 100
+VIDEO_INPUT_SHAPE = (40,2048)
+# VIDEO_INPUT_SHAPE = (None,2048)
+NO_EPOCHS = 1
 # For Single caption per video
 # STEPS_FOR_TRAIN_SAMPLES = 48
 # TRAINING_BATCH_SIZE = 34
@@ -60,7 +61,7 @@ OPTIMIZER = Adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.99, epsilon=1e-07, 
 
 if ONLY_PREDICT is False:
     model = BidirectionalGRUModel(cp, EMBEDDING_DIM, VIDEO_INPUT_SHAPE, vocabEmbedding)
-    model.buildModel()
+    model.buildModel(use_attention=True)
     model.compileModel(OPTIMIZER)
     # Load pretrained Model
     if CONTINUE_TRAINING is True:

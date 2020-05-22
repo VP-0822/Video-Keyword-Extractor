@@ -12,16 +12,16 @@ class Attention(Layer):
         self.weight_constraint = constraints.get(W_constraint)
         self.bias_constraint = constraints.get(b_constraint)
         self.output_attention = output_attention
-        super(Attention, self).__init__(**kwargs)
+        super(Attention, self).__init__(dtype='float32', **kwargs)
     
     def build(self, input_shape):
-        self.weights = self.add_weight((input_shape[-1],), \
-                initializer=self.init, name='{}_W'.format(self.name), \
-                regularizer=self.W_regularizer, constraint=self.W_constraint)
+        self.weights_cust = self.add_weight('{}_W'.format(self.name), shape=(input_shape[-1],), \
+                initializer=self.initializer, \
+                regularizer=self.weight_regularizers, constraint=self.weight_constraint, trainable=True)
         
-        self.bias = self.add_weight((input_shape[1],), initializer='zero', \
-            name='{}_b'.format(self.name), regularizer=self.b_regularizer, \
-            constraint=self.b_constraint)
+        self.bias_cust = self.add_weight('{}_b'.format(self.name), shape=(input_shape[1],), initializer='zero', \
+            regularizer=self.bias_regularizers, \
+            constraint=self.bias_constraint, trainable=True)
         
         self.built = True
     
@@ -29,7 +29,7 @@ class Attention(Layer):
         return None
     
     def call(self, x, mask=None):
-        eij = dot_product(x, self.weights) + self.bias
+        eij = dot_product(x, self.weights_cust) + self.bias_cust
         
         eij_active = K.tanh(eij)
 
