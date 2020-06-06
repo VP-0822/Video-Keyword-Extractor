@@ -1,0 +1,1 @@
+Implementation is referenced from http://nlp.seas.harvard.edu/2018/04/03/attention.html and https://github.com/v-iashin/MDVC

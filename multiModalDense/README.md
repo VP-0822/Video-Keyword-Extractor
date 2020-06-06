@@ -8,3 +8,8 @@ Code reference from https://github.com/v-iashin/MDVC.
   booktitle = {Workshop on Multimodal Learning (CVPR Workshop)},
   year = {2020}
 }
+
+Packages
+- pip install torchtext
+- pip install spacy
+- python -m spacy download en
