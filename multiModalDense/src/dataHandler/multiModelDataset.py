@@ -92,9 +92,19 @@ class MultiModelDataset(Dataset):
         T_end_time = torch.tensor(end_time_list, device=self.device).unsqueeze(1)
         T_categories = torch.tensor(categories, device=self.device).unsqueeze(1)
 
+        # video_rgb_features: shape (sequence_length, video_feature_dimension) For e.g. (225, 1024)
+        # video_flow_features: shape (sequence_length, video_feature_dimension) For e.g. (225, 1024)
+        # audio_rgb_features: shape (sequence_length, audio_feature_dimension) For e.g. (224, 128)
         return video_ids, T_start_time, T_end_time, T_categories, filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks
 
     def _filterSinglevideo(self, start_time, end_time, full_video_length, video_rgb_features, video_flow_features, audio_features):
+        """
+            Returns all modality features
+            Returns:
+                video_rgb_features: shape (sequence_length, video_feature_dimension) For e.g. (225, 1024)
+                video_flow_features: shape (sequence_length, video_feature_dimension) For e.g. (225, 1024)
+                audio_rgb_features: shape (sequence_length, audio_feature_dimension) For e.g. (224, 128)
+        """
         assert video_rgb_features.shape == video_flow_features.shape
         video_timesteps, video_feature_dimension = video_rgb_features.shape
         audio_timesteps, audio_feature_dimension = audio_features.shape

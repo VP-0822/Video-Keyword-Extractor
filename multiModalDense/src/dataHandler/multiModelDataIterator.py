@@ -4,7 +4,7 @@ import captionDataset
 
 class MultiModelDataIterator(Dataset):
     def __init__(self, video_feature_hdf5_file_path, audio_feature_hdf5_file_path, device, \
-            phase_meta_file_path,  use_yt_categories, use_asr_subtitles, batch_size, \
+            phase_meta_file_path,  training_meta_file_path,use_yt_categories, use_asr_subtitles, batch_size, \
             preprocess_video_features=True, preprocess_audio_features=True, video_mean_split=True, \
             audio_mean_split=True, split_size=4, min_word_occurance_freq=2):
 
@@ -12,6 +12,7 @@ class MultiModelDataIterator(Dataset):
         self.audio_feature_hdf5_file_path = audio_feature_hdf5_file_path
         self.device = device
         self.phase_meta_file_path = phase_meta_file_path
+        self.training_meta_file_path = training_meta_file_path
         self.use_yt_categories = use_yt_categories
         self.use_asr_subtitles = use_asr_subtitles
         self.batch_size = batch_size
@@ -24,6 +25,7 @@ class MultiModelDataIterator(Dataset):
         
         self.captionDataset = captionDataset.CaptionDataset(captionDataset.START_TOKEN, captionDataset.END_TOKEN, \
             captionDataset.PADDING_TOKEN, use_yt_categories, use_asr_subtitles, batch_size, device)
+        self.captionDataset.createDataset(self.phase_meta_file_path, self.training_meta_file_path, self.min_word_occurance_freq)
 
         self.multiModelDataset = multiModelDataset.MultiModelDataset(video_feature_hdf5_file_path, \
             audio_feature_hdf5_file_path, self.captionDataset.getPaddingTokenIndex(),  device, phase_meta_file_path, \
@@ -43,3 +45,6 @@ class MultiModelDataIterator(Dataset):
     def update_iterator(self):
         # reset captionIterator as it is created using python default iter(..)
         self.captionDataset.resetCaptionIterator()
+    
+    def getCaptionDataset(self):
+        return self.captionDataset

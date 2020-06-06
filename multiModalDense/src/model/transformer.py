@@ -121,7 +121,7 @@ class MultiModalTransformer(nn.Module):
         # generate
         out = self.generator(out_subs, out_audio, out_video)
         
-        return out # (B, St, voc_size)
+        return out
 
 class Identity(nn.Module):
     """

@@ -138,9 +138,13 @@ if __name__ == "__main__":
     datasetIterator = iter(dataset)
     singleBatch = next(datasetIterator)
     print('Caption loader dataset single batch shape: ' + str(singleBatch.batch_size))
+    captionData = singleBatch.caption
+    captionData_np = np.array(captionData)
+    print(captionData_np.shape)
+    print(captionData_np[0])
     batchVideoIndex = singleBatch.idx
     print(batchVideoIndex)
     for index in batchVideoIndex:
         idx = index.item()
-        print(idx)
+        # print(idx)
     pass
