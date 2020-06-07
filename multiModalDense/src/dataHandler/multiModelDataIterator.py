@@ -48,3 +48,12 @@ class MultiModelDataIterator(Dataset):
     
     def getCaptionDataset(self):
         return self.captionDataset
+    
+    def getMultiModalDataset(self):
+        return self.multiModelDataset
+    
+    def getDevice(self):
+        return self.device
+    
+    def dont_collate(self, batch):
+        return batch[0]

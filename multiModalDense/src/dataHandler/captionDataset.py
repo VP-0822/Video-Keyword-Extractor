@@ -40,6 +40,12 @@ class CaptionDataset():
             path=phase_meta_file_path, format='tsv', skip_header=True, fields=tsv_fields,
             filter_pred=self.filter_callback)
         
+        self.maximum_phase_caption_length = 0
+        # Calculate maximum caption length
+        for caption in self.phase_dataset.caption:
+            if len(caption) > self.maximum_phase_caption_length:
+                self.maximum_phase_caption_length = len(caption)
+        
         if phase_meta_file_path != training_meta_file_path:
             self.training_dataset = data.TabularDataset(
                 path=training_meta_file_path, format='tsv', skip_header=True, fields=tsv_fields,
@@ -47,11 +53,11 @@ class CaptionDataset():
         else:
             self.training_dataset = self.phase_dataset
 
-        self.CAPTION_FIELD.build_vocab(self.phase_dataset.caption, min_freq=min_occurance_freq)
+        self.CAPTION_FIELD.build_vocab(self.training_dataset.caption, min_freq=min_occurance_freq)
         self.train_vocab = self.CAPTION_FIELD.vocab
 
         if self.use_asr_subtitles:
-            self.ASR_SUBTITLES_FIELD.build_vocab(self.phase_dataset.subs, min_freq=min_occurance_freq)
+            self.ASR_SUBTITLES_FIELD.build_vocab(self.training_dataset.subs, min_freq=min_occurance_freq)
             self.train_subs_vocab = self.ASR_SUBTITLES_FIELD.vocab
         
         self.createDatasetIterator()
@@ -93,8 +99,14 @@ class CaptionDataset():
     def getCaptionVocabSize(self):
         return len(self.train_vocab)
     
+    def getTrainingCaptionVocabs(self):
+        return self.train_vocab
+
     def getSubtitleVocabSize(self):
         return len(self.train_subs_vocab)
+    
+    def getTrainingSubtitleVocabs(self):
+        return self.train_subs_vocab
     
     def getCaptionDataset(self):
         return self.dataset
@@ -110,6 +122,9 @@ class CaptionDataset():
     def getEndTokenIndex(self):
         self.end_token_index = self.train_vocab.stoi[self.end_token]
         return self.end_token_index
+    
+    def getPhaseMaximumCaptionLength(self):
+        return self.maximum_phase_caption_length
     
     def resetCaptionIterator(self):
         """
@@ -134,6 +149,7 @@ if __name__ == "__main__":
     print('Subtitles vocab size: ' + str(subtitlesVocabSize))
 
     dataset = cd.getCaptionDataset()
+    print('Maximum phase caption length is: ' + str(cd.getPhaseMaximumCaptionLength()))
     print('Caption loader dataset batches (Each has 28 items): ' + str(len(dataset)))
     datasetIterator = iter(dataset)
     singleBatch = next(datasetIterator)

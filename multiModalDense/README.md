@@ -14,4 +14,5 @@ Packages
 - pip install spacy
 - python -m spacy download en
 - pip install tensorboard
+- pip install torchsummary
 - conda install pytorch torchvision -c soumith (For CPU only pytorch)

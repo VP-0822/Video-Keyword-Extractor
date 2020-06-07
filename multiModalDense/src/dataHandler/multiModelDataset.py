@@ -38,8 +38,10 @@ class MultiModelDataset(Dataset):
         return len(self.video_metadata_list)
     
     def __getitem__(self, indices):
+        return self.getItems(indices)
+
+    def getItems(self, indices):
         video_ids, start_time_list, end_time_list, full_video_durations, categories = [], [], [], [], []
-        filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks = [], [], []
 
         # Iterate over batch items which are indexs of videos from meta file
         for index in indices:
@@ -51,6 +53,22 @@ class MultiModelDataset(Dataset):
             end_time_list.append(end_time)
             categories.append(category)
             full_video_durations.append(full_video_duration)
+
+        filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks = self.getFilteredFeatureStack(video_ids, start_time_list, end_time_list, full_video_durations, categories)
+
+        # make other tensors 2D
+        T_start_time = torch.tensor(start_time_list, device=self.device).unsqueeze(1)
+        T_end_time = torch.tensor(end_time_list, device=self.device).unsqueeze(1)
+        T_categories = torch.tensor(categories, device=self.device).unsqueeze(1)
+        T_durations = torch.tensor(full_video_durations, device=self.device).unsqueeze(1)
+
+        # video_rgb_features: shape (sequence_length, video_feature_dimension) For e.g. (225, 1024)
+        # video_flow_features: shape (sequence_length, video_feature_dimension) For e.g. (225, 1024)
+        # audio_rgb_features: shape (sequence_length, audio_feature_dimension) For e.g. (224, 128)
+        return video_ids, T_start_time, T_end_time, T_durations, T_categories, filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks
+
+    def getFilteredFeatureStack(self, video_ids, start_time_list, end_time_list, full_video_durations):
+        filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks = [], [], []
 
         # get video RGB and flow features from hdf5 file
         videoFeatureDataset = VideoFeatureDataset(self.video_hdf5_file_instance)
@@ -65,7 +83,6 @@ class MultiModelDataset(Dataset):
             start_time = start_time_list[index]
             end_time = end_time_list[index]
             full_video_length = full_video_durations[index]
-            video_category = categories[index]
             video_rgb_features = raw_video_rgb_stacks[index]
             video_flow_features = raw_video_flow_stacks[index]
             audio_features = raw_audio_stacks[index]
@@ -87,15 +104,7 @@ class MultiModelDataset(Dataset):
         filtered_video_flow_stacks = pad_sequence(filtered_video_flow_stacks, batch_first=True, padding_value=0)
         filtered_audio_stacks = pad_sequence(filtered_audio_stacks, batch_first=True, padding_value=self.padding_token_index)
 
-        # make other tensors 2D
-        T_start_time = torch.tensor(start_time_list, device=self.device).unsqueeze(1)
-        T_end_time = torch.tensor(end_time_list, device=self.device).unsqueeze(1)
-        T_categories = torch.tensor(categories, device=self.device).unsqueeze(1)
-
-        # video_rgb_features: shape (sequence_length, video_feature_dimension) For e.g. (225, 1024)
-        # video_flow_features: shape (sequence_length, video_feature_dimension) For e.g. (225, 1024)
-        # audio_rgb_features: shape (sequence_length, audio_feature_dimension) For e.g. (224, 128)
-        return video_ids, T_start_time, T_end_time, T_categories, filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks
+        return filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks
 
     def _filterSinglevideo(self, start_time, end_time, full_video_length, video_rgb_features, video_flow_features, audio_features):
         """
@@ -163,4 +172,7 @@ class MultiModelDataset(Dataset):
             tensor = torch.stack(tensor)
 
         return tensor
+    
+    def getVideoMetaDataList(self):
+        return self.video_metadata_list
     
