@@ -1,0 +1,3 @@
+[submodule "multiModalDense/src/submodules/pycocoevalcap"]
+	path = multiModalDense/src/submodules/pycocoevalcap
+	url = https://github.com/salaniz/pycocoevalcap.git
