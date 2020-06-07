@@ -1,8 +1,8 @@
-from evaluate import ANETcaptions
+import evaluate as ev
 
 def calculateMetrics(reference_paths, submission_path, tIoUs):
     metrics = {}
-    evaluator = ANETcaptions(reference_paths, submission_path, tIoUs)
+    evaluator = ev.ANETcaptions(reference_paths, submission_path, tIoUs)
     evaluator.evaluate()
     
     for i, tiou in enumerate(tIoUs):
