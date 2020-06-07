@@ -34,7 +34,7 @@ VIDEOS_TO_MONITOR = ['v_GGSY1Qvo990', 'v_bXdq2zI1Ms0', 'v_aLv03Fznf5A']
 tIoUs_FOR_EVALUATION_METRIC = [0.5] # [0.3, 0.5, 0.7, 0.9]
 CONTINUE_TRAINING = False
 # file paths
-LOG_PATH = os.path.join(root_dir,'/log')
+LOG_PATH = os.path.join(root_dir,'./log')
 CONTINUE_TRAINING_MODEL_FILE_PATH = os.path.join(root_dir,'')
 EXPERIMENT_CHECKPOINT_FOLDER = os.path.join(LOG_PATH, CURRENT_EXPERIMENT_NAME)
 VIDEO_HDF5_FILE_PATH = os.path.join(root_dir,'')
