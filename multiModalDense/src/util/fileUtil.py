@@ -15,6 +15,7 @@ def loadPytorchModel(modelFilePath):
     # summary(vgg, (3, 224, 224))
 
 def savePytorchModel(epoch_number, model, optimizer, average_validation_loss, val_1_metrics, val_2_metrics, best_meteor_metrics, checkpointFolder):
+    
     dict_state = {
         'epoch_number': epoch_number,
         'model_state_dict': model.state_dict(),

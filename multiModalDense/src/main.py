@@ -133,6 +133,9 @@ def main():
                 best_meteor_metrics = average_metrics['METEOR']
                 savePytorchModel(epoch, model, optimizer, avg_validation_loss, validation_set_1_metrics, validation_set_2_metrics, best_meteor_metrics, config.EXPERIMENT_CHECKPOINT_FOLDER)
 
+        if config.SAVE_INTERMEDIATE and (epoch % config.SAVE_INTERMEDIATE_AT_EVERY_NTH_EPOCH == 0):
+            savePytorchModel(epoch, model, optimizer, avg_validation_loss, None, None, best_meteor_metrics, config.EXPERIMENT_CHECKPOINT_FOLDER)
+
         if config.SAVE_MODEL_ON_LAST_EPOCH and (config.TOTAL_EPOCHS - 1 == epoch):
             savePytorchModel(epoch, model, optimizer, avg_validation_loss, None, None, best_meteor_metrics, config.EXPERIMENT_CHECKPOINT_FOLDER)
 
