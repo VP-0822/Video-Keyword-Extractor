@@ -1,5 +1,6 @@
 import torch
 import spacy
+from model.modelUtil import mask
 
 def greedyDecoder(model, final_features_for_model, maximum_caption_length, start_token_index, end_token_index, padding_token_index, categories=None):
     assert model.training == False, 'call model.eval first'
@@ -53,7 +54,7 @@ def predictForMonitorVideos(model, monitor_video_ids, validation_multimodal_data
     for monitor_video_id in monitor_video_ids:
         meta_subset = video_metadata_list[video_metadata_list['video_id'] == monitor_video_id]
         # For each proposal subvideo 
-        for (_, _, _, _, _, _, video_index) in meta_subset.values:
+        for (_, _, _, _, _, _, _, _, video_index) in meta_subset.values:
             original_video_indecies.append(video_index)
 
     filtered_video_ids, filter_video_start_times, filtered_video_end_times, filtered_video_duration_times, \
@@ -67,10 +68,15 @@ def predictForMonitorVideos(model, monitor_video_ids, validation_multimodal_data
         
         video_id = filtered_video_ids[iterator_index]
         video_category = filtered_video_categories[iterator_index]
-        video_start_time = filter_video_start_times[iterator_index]
-        video_end_time = filtered_video_end_times[iterator_index]
+        video_start_time = filter_video_start_times[iterator_index].numpy()[0]
+        video_end_time = filtered_video_end_times[iterator_index].numpy()[0]
 
         log_text += f'\t {video_id} {video_index}\n'
+        
+        # need to make it 3D for decoder
+        video_rgb_features = video_rgb_features.unsqueeze(0)
+        video_flow_features = video_flow_features.unsqueeze(0)
+        audio_features = audio_features.unsqueeze(0)
 
         # Video features for single video_index instance
         video_rgb_features = video_rgb_features.to(device)
@@ -81,7 +87,7 @@ def predictForMonitorVideos(model, monitor_video_ids, validation_multimodal_data
         final_features_for_model = video_rgb_features + video_flow_features, audio_features, subtitle_features
 
         if use_categories:
-            category = torch.tensor([video_category]).to(device)
+            category = torch.tensor([video_category]).unsqueeze(0).to(device)
             target_vocab_indices = greedyDecoder(
                 model, final_features_for_model, maximum_caption_length, start_token_index, end_token_index, padding_token_index, category)
         else:
@@ -94,7 +100,7 @@ def predictForMonitorVideos(model, monitor_video_ids, validation_multimodal_data
         final_caption = ' '.join(trg_words)
 
         log_text += f'\t Predicted caption: {final_caption} \n'
-        log_text += f'\t Ground truth proposals: {video_start_time//60:.0f}:{video_start_time%60:02.0f} {video_end_time//60:.0f}:{video_end_time%60:02.0f} '
+        log_text += f'\t Ground truth proposals: {video_start_time//60:.0f}:{video_start_time%60:02.0f} {video_end_time//60:.0f}:{video_end_time%60:02.0f} \n'
         log_text += f'URL: https://www.youtube.com/embed/{video_id[2:]}?start={video_start_time}&end={video_end_time}&rel=0 \n'
         log_text += '\t \n'
 

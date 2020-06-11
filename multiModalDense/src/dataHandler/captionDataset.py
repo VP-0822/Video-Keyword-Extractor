@@ -29,12 +29,19 @@ class CaptionDataset():
             ('caption', self.CAPTION_FIELD),
             ('start', None),
             ('end', None),
-            ('duration', None),
-            ('category_32', self.CATEGORY_FIELD),
-            ('subs', self.ASR_SUBTITLES_FIELD),
-            ('phase', None),
-            ('idx', self.INDEX_FIELD),
+            ('duration', None)
         ]
+
+        if self.use_yt_categories:
+            tsv_fields.append(('category_32', self.CATEGORY_FIELD))
+        else:
+            tsv_fields.append(('category_32', None))
+        if self.use_asr_subtitles:
+            tsv_fields.append(('subs', self.ASR_SUBTITLES_FIELD))
+        else:
+            tsv_fields.append(('subs', None))
+        tsv_fields.append(('phase', None))
+        tsv_fields.append(('idx', self.INDEX_FIELD))
 
         self.phase_dataset = data.TabularDataset(
             path=phase_meta_file_path, format='tsv', skip_header=True, fields=tsv_fields,

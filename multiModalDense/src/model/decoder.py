@@ -1,8 +1,8 @@
 import torch.nn as nn
-from modelUtil import clone
-from multiheadedAttention import MultiheadedAttention
-from residualConnection import ResidualConnection
-from feedforward import PositionwiseFeedForward
+from model.modelUtil import clone
+from model.multiheadedAttention import MultiheadedAttention
+from model.residualConnection import ResidualConnection
+from model.feedforward import PositionwiseFeedForward
 
 class DecoderLayer(nn.Module):
     """

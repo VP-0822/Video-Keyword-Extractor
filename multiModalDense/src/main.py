@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 
 from util.util import averageOfAllMetrics
 from util.fileUtil import savePytorchModel, loadPytorchModel
-from dataHandler.multiModelDataIterator import MultiModelDataIterator
+from dataHandler.multiModalDataIterator import MultiModalDataIterator
 from model.transformer import MultiModalTransformer
 from loss.lossComputer import LabelSmoothing, SimpleLossCompute
 from scheduler.simpleScheduler import SimpleScheduler
@@ -14,13 +14,6 @@ from train import trainingLoop
 from validate import validationLoop, evaluationLoopOnValidationSet
 
 import config
-
-# prepare runtime
-os.makedirs(config.LOG_PATH)
-os.makedirs(config.EXPERIMENT_CHECKPOINT_FOLDER, exist_ok=True) # handles the case when model_checkpoint_path = LOG_PATH
-summary_writer = tensorboard.SummaryWriter(log_dir=config.LOG_PATH)
-summary_writer.add_text('config', 'Training for experiment name:' + config.CURRENT_EXPERIMENT_NAME, 0)
-summary_writer.add_text('config/comment', config.COMMENT, 0)
 
 def main():
     print(f'Model log folder path: {config.LOG_PATH}')
@@ -34,15 +27,15 @@ def main():
     #torch.cuda.set_device(cfg.device_ids[0])    
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    training_dataset = MultiModelDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.TRAIN_META_FILE_PATH, \
+    training_dataset = MultiModalDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.TRAIN_META_FILE_PATH, \
             config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.BATCH_SIZE, \
             min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY)
 
-    validation_1_dataset = MultiModelDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.VALIDATION_1_META_FILE_PATH, \
+    validation_1_dataset = MultiModalDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.VALIDATION_1_META_FILE_PATH, \
             config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.BATCH_SIZE, \
             min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY)
     
-    validation_2_dataset = MultiModelDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.VALIDATION_2_META_FILE_PATH, \
+    validation_2_dataset = MultiModalDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.VALIDATION_2_META_FILE_PATH, \
             config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.BATCH_SIZE, \
             min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY)
 
@@ -110,7 +103,8 @@ def main():
 
         # Start predicting captions one word by word after certain epochs are done, to save time.
         # On these predictions, evaluation is done
-        if epoch >= config.EPOCH_NUMBER_TO_START_EVALUATION or (config.TOTAL_EPOCHS - 1 == epoch):
+        # if epoch >= config.EPOCH_NUMBER_TO_START_EVALUATION or (config.TOTAL_EPOCHS - 1 == epoch):
+        if epoch >= config.EPOCH_NUMBER_TO_START_EVALUATION:
             # validating with ground truth proposals provided in ActivityNet
             validation_set_1_metrics = evaluationLoopOnValidationSet(model, validation_1_loader, epoch, val_1_maximum_caption_length, config.LOG_PATH, \
                 [config.VALIDATION_1_REFERENCE_JSON], config.tIoUs_FOR_EVALUATION_METRIC, summary_writer, config.USE_CATEGORIES, '1')
@@ -139,6 +133,18 @@ def main():
                 best_meteor_metrics = average_metrics['METEOR']
                 savePytorchModel(epoch, model, optimizer, avg_validation_loss, validation_set_1_metrics, validation_set_2_metrics, best_meteor_metrics, config.EXPERIMENT_CHECKPOINT_FOLDER)
 
+        if config.SAVE_MODEL_ON_LAST_EPOCH and (config.TOTAL_EPOCHS - 1 == epoch):
+            savePytorchModel(epoch, model, optimizer, avg_validation_loss, None, None, best_meteor_metrics, config.EXPERIMENT_CHECKPOINT_FOLDER)
+
+
+# prepare runtime
+os.makedirs(config.LOG_PATH, exist_ok=True)
+os.makedirs(config.EXPERIMENT_CHECKPOINT_FOLDER, exist_ok=True) # handles the case when model_checkpoint_path = LOG_PATH
+summary_writer = tensorboard.SummaryWriter(log_dir=config.LOG_PATH)
+summary_writer.add_text('config', 'Training for experiment name:' + config.CURRENT_EXPERIMENT_NAME, 0)
+summary_writer.add_text('config/comment', config.COMMENT, 0)
+
+main()
 
 
 

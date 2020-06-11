@@ -27,7 +27,7 @@ def trainingLoop(model, dataset_loader, loss_computer, lr_scheduler, epoch_numbe
     model.train() # Just sets model to training mode, hence effective activates droupout and batch-normalization layer
     losses = []
     
-    dataset_loader.dataset.update_iterator() # Call update iterator to reset caption iterator in MultiModelDataIterator.
+    dataset_loader.dataset.update_iterator() # Call update iterator to reset caption iterator in MultiModalDataIterator.
     
     time = strftime('%X', localtime()) # Current time in HH:MM:SS 
 
@@ -56,7 +56,7 @@ def computeLossForABatch(model, phase, batch_data, dataset_iterator, use_categor
             model: Training model object
             phase: Phase of model learning 'train' and 'validate'
             batch_data: data for the batch
-            dataset_iterator: Instance of MultiModelDataIterator
+            dataset_iterator: Instance of MultiModalDataIterator
             loss_computer: Loss computer object
             use_categories: Use youtube category tag as input
         Returns:
@@ -93,7 +93,7 @@ def computeLossForABatch(model, phase, batch_data, dataset_iterator, use_categor
             else:
                 pred = model(feature_stacks, input_captions, masks)
             
-            batch_loss = loss_computer(pred, actual_captions, number_of_tokens_in_actual_captions)
+            batch_loss = loss_computer.label_smoothing(pred, actual_captions)
             # create normalized loss
             batch_loss_norm = batch_loss / number_of_tokens_in_actual_captions
             return batch_loss_norm

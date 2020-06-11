@@ -1,4 +1,4 @@
-import evaluate as ev
+import evaluate.evaluate as ev
 
 def calculateMetrics(reference_paths, submission_path, tIoUs):
     metrics = {}

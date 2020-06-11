@@ -48,7 +48,7 @@ class PositionalEncoder(nn.Module):
         batch_size, sequence_length, embedding_dimension = x.shape
         
         # Only consider positional elements until sequence_length positions
-        x = x + self.pos_enc_mat[:, :S, :].type_as(x)
+        x = x + self.pos_enc_mat[:, :sequence_length, :].type_as(x)
 
         # apply dropout to position encoded inputs
         x = self.dropout(x)

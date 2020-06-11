@@ -1,9 +1,9 @@
 import torch.nn as nn
-from embedding import VocabularyEmbedder, FeatureEmbedder
-from positionalEncoder import PositionalEncoder
-from encoder import Encoder
-from decoder import Decoder
-from generator import Generator
+from model.embedding import VocabularyEmbedder, FeatureEmbedder
+from model.positionalEncoder import PositionalEncoder
+from model.encoder import Encoder
+from model.decoder import Decoder
+from model.generator import Generator
 
 class MultiModalTransformer(nn.Module):
     """

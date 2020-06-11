@@ -1,6 +1,11 @@
 from evaluate.metric import calculateMetrics
 from predict import predictForMonitorVideos, greedyDecoder
 import json
+from time import time, strftime, localtime
+from tqdm import tqdm
+import os
+import numpy as np
+from train import computeLossForABatch
 
 def validationLoop(model, dataset_loader, loss_computer, lr_scheduler, epoch_number, maximum_caption_length, videos_to_monitor, summary_writer, use_categories, validation_set_no):
     """
@@ -17,7 +22,7 @@ def validationLoop(model, dataset_loader, loss_computer, lr_scheduler, epoch_num
     time = strftime('%X', localtime())
     dataset_iterator = dataset_loader.dataset
 
-    for i, batch in enumerate(tqdm(dataset_loader, desc=f'{time} {validation_set_name} ({epoch_number})')):
+    for i, batch_data in enumerate(tqdm(dataset_loader, desc=f'{time} {validation_set_name} ({epoch_number})')):
         batch_loss_normalised = computeLossForABatch(model, validation_set_name, batch_data, dataset_iterator, use_categories, loss_computer)
         
         losses.append(batch_loss_normalised.item())
@@ -33,9 +38,9 @@ def validationLoop(model, dataset_loader, loss_computer, lr_scheduler, epoch_num
         
         if validation_set_name == 'validate_1':
             if use_categories:
-                log_text = predictForMonitorVideos(videos_to_monitor, dataset_iterator, model, maximum_caption_length, use_categories)
+                log_text = predictForMonitorVideos(model, videos_to_monitor, dataset_iterator, maximum_caption_length, use_categories)
             else:
-                log_text = predictForMonitorVideos(videos_to_monitor, dataset_iterator, model, maximum_caption_length, modality)
+                log_text = predictForMonitorVideos(model, videos_to_monitor, dataset_iterator, maximum_caption_length)
             summary_writer.add_text(f'prediction_1by1_{validation_set_name}', log_text, epoch_number)
         
     return epoch_loss
@@ -62,6 +67,7 @@ def evaluationLoopOnValidationSet(model, dataset_loader, epoch, maximum_caption_
     start_token_index = multimodal_dataset_iterator.getCaptionDataset().getStartTokenIndex()
     end_token_index = multimodal_dataset_iterator.getCaptionDataset().getEndTokenIndex()
     pad_token_index = multimodal_dataset_iterator.getCaptionDataset().getPaddingTokenIndex()
+    training_caption_vocabs = multimodal_dataset_iterator.getCaptionDataset().getTrainingCaptionVocabs()
 
     tqdm_title = f'{time_} 1-by-1 gt proposals ({epoch})'
     
@@ -76,7 +82,7 @@ def evaluationLoopOnValidationSet(model, dataset_loader, epoch, maximum_caption_
             target_vocab_indices = greedyDecoder(model, feature_stacks, maximum_caption_length, start_token_index, end_token_index, pad_token_index)
         target_vocab_indices = target_vocab_indices.cpu().numpy() # what happens here if I use only cpu?
         # transform integers into strings
-        predicted_row_wise_caption_tokens_list = [[dataset_loader.dataset.train_vocab.itos[index] for index in indices] for indices in target_vocab_indices]
+        predicted_row_wise_caption_tokens_list = [[training_caption_vocabs.itos[index] for index in indices] for indices in target_vocab_indices]
 
         # initialize the list to fill it using indices instead of appending them
         final_caption_list = [None] * len(predicted_row_wise_caption_tokens_list) # batch size
@@ -132,7 +138,7 @@ def evaluationLoopOnValidationSet(model, dataset_loader, epoch, maximum_caption_
 
         val_metrics = calculateMetrics(reference_paths, submission_path, tIoUs)
 
-        if (summary_writer is not None) and (props_are_gt):
+        if (summary_writer is not None):
             summary_writer.add_scalar(f'{validation_set_name}/meteor', val_metrics['Average across tIoUs']['METEOR'] * 100, epoch)
             summary_writer.add_scalar(f'{validation_set_name}/bleu4', val_metrics['Average across tIoUs']['Bleu_4'] * 100, epoch)
             summary_writer.add_scalar(f'{validation_set_name}/bleu3', val_metrics['Average across tIoUs']['Bleu_3'] * 100, epoch)

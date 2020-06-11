@@ -60,6 +60,6 @@ class FeatureEmbedder(nn.Module):
                 shape (batch_size, sequence_length, embedding_dimension)
         """
         x = self.embedder(x)
-        x = x * np.sqrt(self.d_model)
+        x = x * np.sqrt(self.embedding_dimension)
         
         return x

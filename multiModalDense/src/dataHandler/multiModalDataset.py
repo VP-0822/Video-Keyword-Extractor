@@ -1,12 +1,12 @@
 from torch.utils.data.dataset import Dataset
-from videoFeatures import VideoFeatureDataset
-from audioFeatures import AudioFeatureDataset
+from dataHandler.videoFeatures import VideoFeatureDataset
+from dataHandler.audioFeatures import AudioFeatureDataset
 import pandas as pd
 import h5py
 import torch
 from torch.nn.utils.rnn import pad_sequence
 
-class MultiModelDataset(Dataset):
+class MultiModalDataset(Dataset):
     def __init__(self, video_feature_hdf5_file_path, audio_feature_hdf5_file_path, padding_token_index,  device, phase_meta_file_path, 
                 preprocess_video_features=True, preprocess_audio_features=True, video_mean_split=True, audio_mean_split=True, split_size=4):
         self.video_feature_hdf5_file_path = video_feature_hdf5_file_path
@@ -45,7 +45,10 @@ class MultiModelDataset(Dataset):
 
         # Iterate over batch items which are indexs of videos from meta file
         for index in indices:
-            original_index = index.item()
+            if type(index) is int:
+                original_index = index
+            else:
+                original_index = index.item()
             video_id, caption, start_time, end_time, full_video_duration, category, _, _, _ = self.video_metadata_list.iloc[original_index]
             
             video_ids.append(video_id)
@@ -54,7 +57,7 @@ class MultiModelDataset(Dataset):
             categories.append(category)
             full_video_durations.append(full_video_duration)
 
-        filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks = self.getFilteredFeatureStack(video_ids, start_time_list, end_time_list, full_video_durations, categories)
+        filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks = self.getFilteredFeatureStack(video_ids, start_time_list, end_time_list, full_video_durations)
 
         # make other tensors 2D
         T_start_time = torch.tensor(start_time_list, device=self.device).unsqueeze(1)
@@ -137,7 +140,14 @@ class MultiModelDataset(Dataset):
         end_index = int(final_video_timesteps * end_fraction)
 
         # handle scenario where segment is very small
-        assert start_index == end_index
+        if start_index == end_index:
+            print('Found very small video segment')
+            # [T:T] -> [T-1:T] (T can be either T_video or T_audio)
+            if start_index == final_video_timesteps:
+                start_index -= 1
+            # [T:T] -> [T:T+1]
+            else:
+                end_index += 1
 
         # trim to only segment features
         video_segment_rgb_features = video_rgb_features[start_index:end_index, :]

@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from copy import deepcopy
 import torch.nn.functional as F
+import torch.nn as nn
 
 """
     Provides utility functions needed for transformer model
@@ -62,7 +63,7 @@ def clone(module, number_of_copies):
         Returns:
             nn.ModuleList of size number_of_copies
     """
-    return nn.ModuleList([deepcopy(module) for _ in range(N)])
+    return nn.ModuleList([deepcopy(module) for _ in range(number_of_copies)])
 
 def attention(Q, K, V, mask):
     """

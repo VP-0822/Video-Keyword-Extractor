@@ -1,5 +1,5 @@
 import torch.nn as nn
-from modelUtil import clone, attention
+from model.modelUtil import clone, attention
 
 class MultiheadedAttention(nn.Module):
     """
@@ -54,9 +54,9 @@ class MultiheadedAttention(nn.Module):
         K = self.linears[1](K) # (batch_size, sequence_length, model_dimension) -> (batch_size, sequence_length, model_dimension) => input_linear_model_dim = output_linear_model_dim
         V = self.linears[2](V) # (batch_size, sequence_length, model_dimension) -> (batch_size, sequence_length, model_dimension) => input_linear_model_dim = output_linear_model_dim
         
-        Q = Q.view(B, -1, self.H, self.d_k).transpose(-3, -2) # reshaped to (batch_size, number_of_heads, runtime_sequence_length, d_k)
-        K = K.view(B, -1, self.H, self.d_k).transpose(-3, -2) # reshaped to (batch_size, number_of_heads, runtime_sequence_length, d_k)
-        V = V.view(B, -1, self.H, self.d_k).transpose(-3, -2) # reshaped to (batch_size, number_of_heads, runtime_sequence_length, d_k)
+        Q = Q.view(B, -1, self.number_of_heads, self.d_k).transpose(-3, -2) # reshaped to (batch_size, number_of_heads, runtime_sequence_length, d_k)
+        K = K.view(B, -1, self.number_of_heads, self.d_k).transpose(-3, -2) # reshaped to (batch_size, number_of_heads, runtime_sequence_length, d_k)
+        V = V.view(B, -1, self.number_of_heads, self.d_k).transpose(-3, -2) # reshaped to (batch_size, number_of_heads, runtime_sequence_length, d_k)
         
         if mask is not None:
             # the same mask for all heads
