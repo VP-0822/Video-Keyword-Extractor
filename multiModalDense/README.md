@@ -17,7 +17,11 @@ Packages
 - python -m spacy download en
 - pip install tensorboard
 - pip install torchsummary
+- pip install torchvision
+- pip install pandas
 - conda install pytorch torchvision -c soumith (For CPU only pytorch)
 
 Git Submodules:
 https://github.com/salaniz/pycocoevalcap/tree/ca1b05fa0e99f86de2259f87d43c72b322523731
+
+After cloning use command: git submodule update --init
