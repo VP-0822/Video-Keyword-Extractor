@@ -38,6 +38,8 @@ def trainingLoop(model, dataset_loader, loss_computer, lr_scheduler, epoch_numbe
         
         batch_loss_normalised = computeLossForABatch(model, 'train', batch_data, dataset_iterator, use_categories, loss_computer)
         losses.append(batch_loss_normalised.item())
+        print('batch loss:')
+        print(batch_loss_normalised.item())
 
         if summary_writer is not None:
             step_num = epoch_number * len(dataset_loader) + i
@@ -47,6 +49,9 @@ def trainingLoop(model, dataset_loader, loss_computer, lr_scheduler, epoch_numbe
     # we have already divided it
     epoch_loss = np.sum(losses) / len(dataset_loader)
     
+    print('Epoch loss:')
+    print(epoch_loss)
+
     if summary_writer is not None:
         summary_writer.add_scalar('debug/train_loss_epoch', epoch_loss, epoch_number)
 

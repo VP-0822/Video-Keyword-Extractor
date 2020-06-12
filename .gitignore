@@ -129,4 +129,5 @@ dmypy.json
 .pyre/
 
 data/
+log/
 quick-access.txt
