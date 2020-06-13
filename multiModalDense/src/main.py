@@ -21,6 +21,12 @@ except ImportError:
     print('[WARNING]: Not able to import "torch_xla.core.xla_model", try pip install..')
 
 def main():
+    # prepare runtime
+    os.makedirs(config.LOG_PATH, exist_ok=True)
+    os.makedirs(config.EXPERIMENT_CHECKPOINT_FOLDER, exist_ok=True) # handles the case when model_checkpoint_path = LOG_PATH
+    summary_writer = tensorboard.SummaryWriter(log_dir=config.LOG_PATH)
+    summary_writer.add_text('config', 'Training for experiment name:' + config.CURRENT_EXPERIMENT_NAME, 0)
+    summary_writer.add_text('config/comment', config.COMMENT, 0)
     print(f'Model log folder path: {config.LOG_PATH}')
 
     # initialize random seed
@@ -37,6 +43,7 @@ def main():
         print('Using TPU device')
     else:
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    print(device)
 
     training_dataset = MultiModalDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.TRAIN_META_FILE_PATH, \
             config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.BATCH_SIZE, \
@@ -149,19 +156,4 @@ def main():
 
         if config.SAVE_MODEL_ON_LAST_EPOCH and (config.TOTAL_EPOCHS - 1 == epoch):
             savePytorchModel(epoch, model, optimizer, avg_validation_loss, None, None, best_meteor_metrics, config.EXPERIMENT_CHECKPOINT_FOLDER)
-
-
-# prepare runtime
-os.makedirs(config.LOG_PATH, exist_ok=True)
-os.makedirs(config.EXPERIMENT_CHECKPOINT_FOLDER, exist_ok=True) # handles the case when model_checkpoint_path = LOG_PATH
-summary_writer = tensorboard.SummaryWriter(log_dir=config.LOG_PATH)
-summary_writer.add_text('config', 'Training for experiment name:' + config.CURRENT_EXPERIMENT_NAME, 0)
-summary_writer.add_text('config/comment', config.COMMENT, 0)
-
-main()
-
-
-
-        
-
 

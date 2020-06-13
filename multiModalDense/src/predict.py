@@ -51,11 +51,15 @@ def predictForMonitorVideos(model, monitor_video_ids, validation_multimodal_data
     predicted_row_wise_caption_words_list = [] # Row-wise caption words list
 
     original_video_indecies = []
+    original_start_time = []
+    original_end_time = []
     for monitor_video_id in monitor_video_ids:
         meta_subset = video_metadata_list[video_metadata_list['video_id'] == monitor_video_id]
         # For each proposal subvideo 
-        for (_, _, _, _, _, _, _, _, video_index) in meta_subset.values:
+        for (_, _, start, end, _, _, _, _, video_index) in meta_subset.values:
             original_video_indecies.append(video_index)
+            original_start_time.append(start)
+            original_end_time.append(end)
 
     filtered_video_ids, filter_video_start_times, filtered_video_end_times, filtered_video_duration_times, \
     filtered_video_categories, filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks = validation_multimodal_dataset_iterator.getMultiModalDataset().getItems(original_video_indecies)
@@ -64,12 +68,12 @@ def predictForMonitorVideos(model, monitor_video_ids, validation_multimodal_data
         video_rgb_features = filtered_video_rgb_stacks[iterator_index]
         video_flow_features = filtered_video_flow_stacks[iterator_index]
         audio_features = filtered_audio_stacks[iterator_index]
-        subtitle_features = encodeSubtitleToTokenIndices(training_subtitle_vocabs, video_index, video_metadata_list, start_token_index, end_token_index)
+        subtitle_features = encodeSubtitleToTokenIndices(training_subtitle_vocabs, video_index, video_metadata_list, start_token_index, end_token_index, device)
         
         video_id = filtered_video_ids[iterator_index]
         video_category = filtered_video_categories[iterator_index]
-        video_start_time = filter_video_start_times[iterator_index].numpy()[0]
-        video_end_time = filtered_video_end_times[iterator_index].numpy()[0]
+        video_start_time = original_start_time[iterator_index].cpu().numpy()[0]
+        video_end_time = original_end_time[iterator_index].cpu().numpy()[0]
 
         log_text += f'\t {video_id} {video_index}\n'
         
@@ -106,7 +110,7 @@ def predictForMonitorVideos(model, monitor_video_ids, validation_multimodal_data
 
     return log_text
 
-def encodeSubtitleToTokenIndices(train_subs_vocab, video_index, video_metadata_list, start_token_index, end_token_index):
+def encodeSubtitleToTokenIndices(train_subs_vocab, video_index, video_metadata_list, start_token_index, end_token_index, device):
     subs = video_metadata_list.iloc[video_index]['subs']
     # check for 'nan'
     if subs != subs:
@@ -114,4 +118,4 @@ def encodeSubtitleToTokenIndices(train_subs_vocab, video_index, video_metadata_l
     subs = [token.text for token in spacy.load('en').tokenizer(subs)]
     subs = [train_subs_vocab.stoi[word] for word in subs]
     subs = [start_token_index] + subs + [end_token_index]
-    return torch.tensor(subs).unsqueeze(0)
+    return torch.tensor(subs).unsqueeze(0).to(device)
