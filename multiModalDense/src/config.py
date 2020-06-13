@@ -1,6 +1,7 @@
 import os
 root_dir = os.path.dirname(__file__)
 # Config parameters
+USE_TPU = False
 CURRENT_EXPERIMENT_NAME = 'firstrun'
 COMMENT = 'Executing for the first time'
 USE_LINEAR_EMBEDDER = True

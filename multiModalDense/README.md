@@ -19,6 +19,7 @@ Packages
 - pip install torchsummary
 - pip install torchvision
 - pip install pandas
+- pip install h5py
 - conda install pytorch torchvision -c soumith (For CPU only pytorch)
 
 Git Submodules:

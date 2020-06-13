@@ -15,6 +15,11 @@ from validate import validationLoop, evaluationLoopOnValidationSet
 
 import config
 
+try:
+    import torch_xla.core.xla_model as xm
+except ImportError:
+    print('[WARNING]: Not able to import "torch_xla.core.xla_model", try pip install..')
+
 def main():
     print(f'Model log folder path: {config.LOG_PATH}')
 
@@ -26,8 +31,12 @@ def main():
 
     # torch.backends.cudnn.deterministic = True
     # torch.backends.cudnn.benchmark = False
-    #torch.cuda.set_device(cfg.device_ids[0])    
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    #torch.cuda.set_device(cfg.device_ids[0])
+    if config.USE_TPU:
+        device = xm.xla_device()
+        print('Using TPU device')
+    else:
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     training_dataset = MultiModalDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.TRAIN_META_FILE_PATH, \
             config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.BATCH_SIZE, \
@@ -62,7 +71,7 @@ def main():
     label_smoothing = LabelSmoothing(config.LABEL_SMOOTHING_FACTOR, training_dataset.getCaptionDataset().getPaddingTokenIndex())
     # lr = 0 here have no impact on training (see lr scheduler)
     optimizer = torch.optim.Adam(model.parameters(), 0, (config.ADAM_BETA_1, config.ADAM_BEAT_2), config.ADAM_EPS)
-    lr_scheduler = SimpleScheduler(optimizer, config.LEARNING_RATE)
+    lr_scheduler = SimpleScheduler(optimizer, config.LEARNING_RATE, device)
     loss_computer = SimpleLossCompute(label_smoothing, lr_scheduler)
 
     # transfer model to device
