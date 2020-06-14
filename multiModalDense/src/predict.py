@@ -72,8 +72,8 @@ def predictForMonitorVideos(model, monitor_video_ids, validation_multimodal_data
         
         video_id = filtered_video_ids[iterator_index]
         video_category = filtered_video_categories[iterator_index]
-        video_start_time = original_start_time[iterator_index].cpu().numpy()[0]
-        video_end_time = original_end_time[iterator_index].cpu().numpy()[0]
+        video_start_time = original_start_time[iterator_index]
+        video_end_time = original_end_time[iterator_index]
 
         log_text += f'\t {video_id} {video_index}\n'
         
