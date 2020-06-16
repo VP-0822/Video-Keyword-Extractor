@@ -2,8 +2,8 @@ import os
 root_dir = os.path.dirname(__file__)
 # Config parameters
 USE_TPU = False
-CURRENT_EXPERIMENT_NAME = 'Second run'
-COMMENT = 'Few fixes during training'
+CURRENT_EXPERIMENT_NAME = 'Third run'
+COMMENT = 'Removed average split'
 USE_LINEAR_EMBEDDER = True
 USE_CATEGORIES = False
 USE_SUBTITLES = True
@@ -30,7 +30,7 @@ LEARNING_RATE = 1e-5
 STARTING_EPOCH = 0
 TOTAL_EPOCHS = 40
 EARLY_STOP_EPOCH_NUMBERS = 20
-EPOCH_NUMBER_TO_START_EVALUATION = 25 #TODO: Set appropriate
+EPOCH_NUMBER_TO_START_EVALUATION = 30 #TODO: Set appropriate
 VIDEOS_TO_MONITOR = ['v_GGSY1Qvo990', 'v_bXdq2zI1Ms0', 'v_aLv03Fznf5A']
 tIoUs_FOR_EVALUATION_METRIC = [0.5] # [0.3, 0.5, 0.7, 0.9]
 CONTINUE_TRAINING = False
