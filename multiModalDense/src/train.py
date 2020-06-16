@@ -71,7 +71,7 @@ def computeLossForABatch(model, phase, batch_data, dataset_iterator, use_categor
 
     captions = caption_data.caption # All batch video captions by index
     input_captions = captions[:, :-1] # Remove last caption token 'end of statement token'
-    actual_captions = captions[:, :-1] # Remove first caption token 'start token'. Size (batch_size, target_sequence_length)
+    actual_captions = captions[:, 1:] # Remove first caption token 'start token'. Size (batch_size, target_sequence_length)
     subtitle_stack = caption_data.subs
     feature_stacks = video_rgb_feature_stack + video_flow_feature_stack, audio_feature_stack, subtitle_stack
 
