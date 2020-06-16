@@ -47,15 +47,15 @@ def main():
 
     training_dataset = MultiModalDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.TRAIN_META_FILE_PATH, \
             config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.BATCH_SIZE, \
-            min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY)
+            min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY, video_mean_split=False, audio_mean_split=False)
 
     validation_1_dataset = MultiModalDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.VALIDATION_1_META_FILE_PATH, \
             config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.BATCH_SIZE, \
-            min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY)
+            min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY, video_mean_split=False, audio_mean_split=False)
     
     validation_2_dataset = MultiModalDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.VALIDATION_2_META_FILE_PATH, \
             config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.BATCH_SIZE, \
-            min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY)
+            min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY, video_mean_split=False, audio_mean_split=False)
 
     val_1_maximum_caption_length = validation_1_dataset.getCaptionDataset().getPhaseMaximumCaptionLength()
     val_2_maximum_caption_length = validation_2_dataset.getCaptionDataset().getPhaseMaximumCaptionLength()
