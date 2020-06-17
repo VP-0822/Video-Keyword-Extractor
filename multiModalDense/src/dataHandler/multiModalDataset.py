@@ -7,7 +7,7 @@ import torch
 from torch.nn.utils.rnn import pad_sequence
 
 class MultiModalDataset(Dataset):
-    def __init__(self, video_feature_hdf5_file_path, audio_feature_hdf5_file_path, padding_token_index,  device, phase_meta_file_path, 
+    def __init__(self, video_feature_hdf5_file_path, audio_feature_hdf5_file_path, padding_token_index,  device, phase_meta_file_path, forOneByOnePrediction, 
                 preprocess_video_features=True, preprocess_audio_features=True, video_mean_split=True, audio_mean_split=True, split_size=4):
         self.video_feature_hdf5_file_path = video_feature_hdf5_file_path
         self.audio_feature_hdf5_file_path = audio_feature_hdf5_file_path
@@ -19,6 +19,7 @@ class MultiModalDataset(Dataset):
         self.video_mean_split = video_mean_split
         self.audio_mean_split = audio_mean_split
         self.feature_split_size = split_size
+        self.forOneByOnePrediction = forOneByOnePrediction
 
         # Predefined constants
         self.VIDEO_FEATURE_DIM = 1024
@@ -38,9 +39,9 @@ class MultiModalDataset(Dataset):
         return len(self.video_metadata_list)
     
     def __getitem__(self, indices):
-        return self.getItems(indices)
+        return self.getItems(indices, self.forOneByOnePrediction)
 
-    def getItems(self, indices):
+    def getItems(self, indices, forOneByOnePrediction=False):
         video_ids, start_time_list, end_time_list, full_video_durations, categories = [], [], [], [], []
 
         # Iterate over batch items which are indexs of videos from meta file
@@ -57,7 +58,7 @@ class MultiModalDataset(Dataset):
             categories.append(category)
             full_video_durations.append(full_video_duration)
 
-        filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks = self.getFilteredFeatureStack(video_ids, start_time_list, end_time_list, full_video_durations)
+        filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks = self.getFilteredFeatureStack(video_ids, start_time_list, end_time_list, full_video_durations, forOneByOnePrediction)
 
         # make other tensors 2D
         T_start_time = torch.tensor(start_time_list, device=self.device).unsqueeze(1)
@@ -70,7 +71,7 @@ class MultiModalDataset(Dataset):
         # audio_rgb_features: shape (sequence_length, audio_feature_dimension) For e.g. (224, 128)
         return video_ids, T_start_time, T_end_time, T_durations, T_categories, filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks
 
-    def getFilteredFeatureStack(self, video_ids, start_time_list, end_time_list, full_video_durations):
+    def getFilteredFeatureStack(self, video_ids, start_time_list, end_time_list, full_video_durations, forOneByOnePrediction):
         filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks = [], [], []
 
         # get video RGB and flow features from hdf5 file
@@ -102,10 +103,11 @@ class MultiModalDataset(Dataset):
             filtered_video_flow_stacks.append(T_video_flow_features)
             filtered_audio_stacks.append(T_audio_features)
 
-        # apply padding to all features. padding 0 is applied to flow features as per literature referred [RGB and Flow are summed anyways]
-        filtered_video_rgb_stacks = pad_sequence(filtered_video_rgb_stacks, batch_first=True, padding_value=self.padding_token_index)
-        filtered_video_flow_stacks = pad_sequence(filtered_video_flow_stacks, batch_first=True, padding_value=0)
-        filtered_audio_stacks = pad_sequence(filtered_audio_stacks, batch_first=True, padding_value=self.padding_token_index)
+        if forOneByOnePrediction is False:
+            # apply padding to all features. padding 0 is applied to flow features as per literature referred [RGB and Flow are summed anyways]
+            filtered_video_rgb_stacks = pad_sequence(filtered_video_rgb_stacks, batch_first=True, padding_value=self.padding_token_index)
+            filtered_video_flow_stacks = pad_sequence(filtered_video_flow_stacks, batch_first=True, padding_value=0)
+            filtered_audio_stacks = pad_sequence(filtered_audio_stacks, batch_first=True, padding_value=self.padding_token_index)
 
         return filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks
 
@@ -168,12 +170,13 @@ class MultiModalDataset(Dataset):
 
         return T_video_segment_rgb_features, T_video_segment_flow_features, T_audio_segment_features
 
-    def reduceFeatureTimesteps(self, tensor, average_split):
+    def reduceFeatureTimesteps(self, tensor, average_split, use_overlap=False):
         if len(tensor) == 0:
             return tensor
         
-        # remove overlapping features
-        tensor = tensor[::2, :]
+        if use_overlap:
+            # remove overlapping features
+            tensor = tensor[::2, :]
 
         if average_split:
             # split tensor into groups of size feature_split_size arrays, apply mean to each group on 0th dim to get 1D tensor

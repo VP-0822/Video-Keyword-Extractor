@@ -62,7 +62,7 @@ def predictForMonitorVideos(model, monitor_video_ids, validation_multimodal_data
             original_end_time.append(end)
 
     filtered_video_ids, filter_video_start_times, filtered_video_end_times, filtered_video_duration_times, \
-    filtered_video_categories, filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks = validation_multimodal_dataset_iterator.getMultiModalDataset().getItems(original_video_indecies)
+    filtered_video_categories, filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks = validation_multimodal_dataset_iterator.getMultiModalDataset().getItems(original_video_indecies, True) # true for onebyoneprediction
 
     for iterator_index, video_index in enumerate(original_video_indecies):
         video_rgb_features = filtered_video_rgb_stacks[iterator_index]
@@ -76,7 +76,7 @@ def predictForMonitorVideos(model, monitor_video_ids, validation_multimodal_data
         video_end_time = original_end_time[iterator_index]
 
         log_text += f'\t {video_id} {video_index}\n'
-        
+
         # need to make it 3D for decoder
         video_rgb_features = video_rgb_features.unsqueeze(0)
         video_flow_features = video_flow_features.unsqueeze(0)

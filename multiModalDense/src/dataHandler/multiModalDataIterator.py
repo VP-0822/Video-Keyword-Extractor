@@ -4,7 +4,7 @@ import dataHandler.multiModalDataset as mmd
 
 class MultiModalDataIterator(Dataset):
     def __init__(self, video_feature_hdf5_file_path, audio_feature_hdf5_file_path, device, \
-            phase_meta_file_path,  training_meta_file_path,use_yt_categories, use_asr_subtitles, batch_size, \
+            phase_meta_file_path,  training_meta_file_path,use_yt_categories, use_asr_subtitles, batch_size, forOneByOnePrediction, \
             preprocess_video_features=True, preprocess_audio_features=True, video_mean_split=True, \
             audio_mean_split=True, split_size=4, min_word_occurance_freq=2):
 
@@ -28,7 +28,7 @@ class MultiModalDataIterator(Dataset):
         self.captionDataset.createDataset(self.phase_meta_file_path, self.training_meta_file_path, self.min_word_occurance_freq)
 
         self.multiModalDataset = mmd.MultiModalDataset(video_feature_hdf5_file_path, \
-            audio_feature_hdf5_file_path, self.captionDataset.getPaddingTokenIndex(),  device, phase_meta_file_path, \
+            audio_feature_hdf5_file_path, self.captionDataset.getPaddingTokenIndex(),  device, phase_meta_file_path, forOneByOnePrediction, \
             preprocess_video_features, preprocess_audio_features, video_mean_split, audio_mean_split, split_size)
 
     def __getitem__(self, unused_dataset_index):
