@@ -100,8 +100,7 @@ class CaptionDataset():
         
     def createDatasetIterator(self):
         sort_key = lambda x: 0
-        #TODO: Enable Shuffle to True
-        self.dataset = data.BucketIterator(self.phase_dataset, self.batch_size, sort_key=sort_key, device=self.device, repeat=False, shuffle=False)
+        self.dataset = data.BucketIterator(self.phase_dataset, self.batch_size, sort_key=sort_key, device=self.device, repeat=False, shuffle=True)
         self.dataset_iterator = iter(self.dataset)
 
     def getCaptionVocabSize(self):
