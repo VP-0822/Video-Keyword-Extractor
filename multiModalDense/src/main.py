@@ -50,19 +50,19 @@ def main():
             min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY, video_mean_split=False, audio_mean_split=False)
 
     validation_1_dataset = MultiModalDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.VALIDATION_1_META_FILE_PATH, \
-            config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.BATCH_SIZE, False, \
+            config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.VALIDATION_BATCH_SIZE, False, \
             min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY, video_mean_split=False, audio_mean_split=False)
     
     validation_2_dataset = MultiModalDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.VALIDATION_2_META_FILE_PATH, \
-            config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.BATCH_SIZE, False, \
+            config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.VALIDATION_BATCH_SIZE, False, \
             min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY, video_mean_split=False, audio_mean_split=False)
     
     prediction_1_dataset = MultiModalDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.VALIDATION_1_META_FILE_PATH, \
-            config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.BATCH_SIZE, True, \
+            config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.VALIDATION_BATCH_SIZE, True, \
             min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY, video_mean_split=False, audio_mean_split=False)
     
     prediction_2_dataset = MultiModalDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.VALIDATION_2_META_FILE_PATH, \
-            config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.BATCH_SIZE, True, \
+            config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.VALIDATION_BATCH_SIZE, True, \
             min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY, video_mean_split=False, audio_mean_split=False)
 
     if config.USE_DEFAULT_CAPTION_LENGTH:
