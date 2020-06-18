@@ -30,7 +30,7 @@ def validationLoop(model, dataset_loader, loss_computer, lr_scheduler, epoch_num
         print(batch_loss_normalised.item())
         if summary_writer is not None:
             step_num = epoch_number * len(dataset_loader) + i
-            summary_writer.add_scalar('train/Loss_iter', batch_loss_normalised.item(), step_num)
+            summary_writer.add_scalar(f'debug/{validation_set_name}_loss_iter', batch_loss_normalised.item(), step_num)
 
     epoch_loss = np.sum(losses) / len(dataset_loader)
 
