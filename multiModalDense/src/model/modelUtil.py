@@ -93,6 +93,12 @@ def attention(Q, K, V, mask):
         sm_input = sm_input.masked_fill(mask == 0, -float('inf'))
     
     softmax = F.softmax(sm_input, dim=-1)
+
+    if torch.isnan(softmax).any():
+        print('*********************')
+        print('DANGER NaN detected..')
+        raise Exception("NaN detected at Softmax attention")
+
     out = softmax.matmul(V)
     
     return out

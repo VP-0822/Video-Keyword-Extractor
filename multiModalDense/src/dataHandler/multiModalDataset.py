@@ -161,6 +161,12 @@ class MultiModalDataset(Dataset):
         T_video_segment_flow_features = torch.tensor(video_segment_flow_features).float()
         T_audio_segment_features = torch.tensor(audio_segment_features).float()
         
+        if len(T_video_segment_rgb_features) == 0:
+            print(f'Found video without audio or video input, initializing with random values')
+            T_video_segment_rgb_features = torch.rand(1, self.VIDEO_FEATURE_DIM, device=self.device)
+            T_video_segment_flow_features = torch.rand(1, self.VIDEO_FEATURE_DIM, device=self.device)
+            T_audio_segment_features = torch.rand(1, self.AUDIO_FEATURE_DIM, device=self.device)
+
         # reduce timesteps by averaging over small groups
         if self.preprocess_video_features:
             T_video_segment_rgb_features = self.reduceFeatureTimesteps(T_video_segment_rgb_features, self.video_mean_split)
