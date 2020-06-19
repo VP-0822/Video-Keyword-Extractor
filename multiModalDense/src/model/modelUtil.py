@@ -90,7 +90,7 @@ def attention(Q, K, V, mask):
     
     if mask is not None:
         #ISSUE: -inf should be avoided and instead using 1e-8
-        sm_input = sm_input.masked_fill(mask == 0, -float(1e-8))
+        sm_input = sm_input.masked_fill(mask == 0, -float('inf'))
     
     softmax = F.softmax(sm_input, dim=-1)
     out = softmax.matmul(V)
