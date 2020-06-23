@@ -2,7 +2,7 @@ import evaluate.evaluate as ev
 
 def calculateMetrics(reference_paths, submission_path, tIoUs):
     metrics = {}
-    evaluator = ev.ANETcaptions(reference_paths, submission_path, tIoUs)
+    evaluator = ev.ANETcaptions(reference_paths, submission_path, tIoUs, verbose=True)
     evaluator.evaluate()
     
     for i, tiou in enumerate(tIoUs):
