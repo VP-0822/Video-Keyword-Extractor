@@ -56,14 +56,6 @@ def main():
     validation_2_dataset = MultiModalDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.VALIDATION_2_META_FILE_PATH, \
             config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.VALIDATION_BATCH_SIZE, False, \
             min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY, video_mean_split=False, audio_mean_split=False)
-    
-    prediction_1_dataset = MultiModalDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.VALIDATION_1_META_FILE_PATH, \
-            config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.VALIDATION_BATCH_SIZE, True, \
-            min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY, video_mean_split=False, audio_mean_split=False)
-    
-    prediction_2_dataset = MultiModalDataIterator(config.VIDEO_HDF5_FILE_PATH, config.AUDIO_HDF5_FILE_PATH, device, config.VALIDATION_2_META_FILE_PATH, \
-            config.TRAIN_META_FILE_PATH, config.USE_CATEGORIES, config.USE_SUBTITLES, config.VALIDATION_BATCH_SIZE, True, \
-            min_word_occurance_freq=config.MINIMUM_WORD_OCCURANCE_FREQUENCY, video_mean_split=False, audio_mean_split=False)
 
     if config.USE_DEFAULT_CAPTION_LENGTH:
         val_1_maximum_caption_length = config.USE_DEFAULT_CAPTION_LENGTH
@@ -73,16 +65,14 @@ def main():
     else:
         val_1_maximum_caption_length = validation_1_dataset.getCaptionDataset().getPhaseMaximumCaptionLength()
         val_2_maximum_caption_length = validation_2_dataset.getCaptionDataset().getPhaseMaximumCaptionLength()
-        prediction_1_maximum_caption_length = prediction_1_dataset.getCaptionDataset().getPhaseMaximumCaptionLength()
-        prediction_2_maximum_caption_length = prediction_2_dataset.getCaptionDataset().getPhaseMaximumCaptionLength()
 
     # Create DataLoader for all datasets
     # DataLoader class stores provided training_dataset in .dataset property of DataLoader
     training_loader = DataLoader(training_dataset, collate_fn=training_dataset.dont_collate)
     validation_1_loader = DataLoader(validation_1_dataset, collate_fn=validation_1_dataset.dont_collate)
     validation_2_loader = DataLoader(validation_2_dataset, collate_fn=validation_2_dataset.dont_collate)
-    prediction_1_loader = DataLoader(prediction_1_dataset, collate_fn=prediction_1_dataset.dont_collate)
-    prediction_2_loader = DataLoader(prediction_2_dataset, collate_fn=prediction_2_dataset.dont_collate)
+    prediction_1_loader = DataLoader(validation_1_dataset, collate_fn=validation_1_dataset.dont_collate)
+    prediction_2_loader = DataLoader(validation_2_dataset, collate_fn=validation_2_dataset.dont_collate)
 
     # Create Transformer Model
     model = MultiModalTransformer(training_dataset.getCaptionDataset().getCaptionVocabSize(), training_dataset.getCaptionDataset().getSubtitleVocabSize(), \
@@ -142,10 +132,10 @@ def main():
         # if epoch >= config.EPOCH_NUMBER_TO_START_EVALUATION or (config.TOTAL_EPOCHS - 1 == epoch):
         if epoch >= config.EPOCH_NUMBER_TO_START_EVALUATION:
             # validating with ground truth proposals provided in ActivityNet
-            validation_set_1_metrics = evaluationLoopOnValidationSet(model, prediction_1_loader, epoch, prediction_1_maximum_caption_length, config.LOG_PATH, \
+            validation_set_1_metrics = evaluationLoopOnValidationSet(model, prediction_1_loader, epoch, val_1_maximum_caption_length, config.LOG_PATH, \
                 [config.VALIDATION_1_REFERENCE_JSON], config.tIoUs_FOR_EVALUATION_METRIC, summary_writer, config.USE_CATEGORIES, '1')
 
-            validation_set_2_metrics = evaluationLoopOnValidationSet(model, prediction_2_loader, epoch, prediction_2_maximum_caption_length, config.LOG_PATH, \
+            validation_set_2_metrics = evaluationLoopOnValidationSet(model, prediction_2_loader, epoch, val_2_maximum_caption_length, config.LOG_PATH, \
                 [config.VALIDATION_2_REFERENCE_JSON], config.tIoUs_FOR_EVALUATION_METRIC, summary_writer, config.USE_CATEGORIES, '2')
             
             val_1_avg_metrics = validation_set_1_metrics['Average across tIoUs']
