@@ -11,7 +11,7 @@ Implementation relies https://github.com/v-iashin/MDVC and http://nlp.seas.harva
 }
 ```
 
-Packages
+Packages for video captioning
 - pip install torchtext
 - pip install spacy
 - python -m spacy download en
@@ -26,3 +26,9 @@ Git Submodules:
 https://github.com/salaniz/pycocoevalcap/tree/ca1b05fa0e99f86de2259f87d43c72b322523731
 
 After cloning use command: git submodule update --init
+
+Packages for video captioning
+- pip install git+https://github.com/boudinfl/pke.git
+- python -m nltk.downloader stopwords
+- python -m nltk.downloader universal_tagset
+- python -m spacy download en # download the english model
