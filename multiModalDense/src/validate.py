@@ -76,7 +76,7 @@ def evaluationLoopOnValidationSet(model, dataset_loader, epoch, maximum_caption_
     tqdm_title = f'{time_} 1-by-1 gt proposals ({epoch})'
     
     for i, batch_data in enumerate(tqdm(dataset_loader, desc=tqdm_title)):
-        caption_data, video_ids, _, starts, ends, video_categories, video_rgb_feature_stack, video_flow_feature_stack, audio_feature_stack = batch_data
+        caption_data, video_ids, starts, ends, _, video_categories, video_rgb_feature_stack, video_flow_feature_stack, audio_feature_stack = batch_data
         feature_stacks = video_rgb_feature_stack + video_flow_feature_stack, audio_feature_stack, caption_data.subs
         
         ### PREDICT TOKENS ONE-BY-ONE AND TRANSFORM THEM INTO STRINGS TO FORM A SENTENCE
