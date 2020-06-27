@@ -48,7 +48,7 @@ def readPredictedJSON(predicted_caption_file_path, meta_csv_file_path):
     missing_video_ids = []
     predicted_caption_dict = readPredictionJSON(predicted_caption_file_path)
     predicted_results = predicted_caption_dict['results']
-    metadata_dict = readMetaCSVtoDict(VAL_1_META_FILE_PATH)
+    metadata_dict = readMetaCSVtoDict(meta_csv_file_path)
     return_dict = {}
     for video_id in list(predicted_results.keys()):
         if video_id not in list(metadata_dict.keys()):
@@ -66,21 +66,27 @@ def readPredictedJSON(predicted_caption_file_path, meta_csv_file_path):
         metadata_timestamps = metadata_dict[video_id]['timestamps']
         if len(metadata_timestamps) != len(timestamps):
             raise Exception('Found mismatch in timestamps between predicted result and metadata')
-        
+        modified_timestamps = []
+        modified_captions = []
         for index, original_timestamp in enumerate(metadata_timestamps):
-            predicted_caption_timestamps = timestamps[index]
-            if original_timestamp[0] != predicted_caption_timestamps[0] or original_timestamp[1] != predicted_caption_timestamps[1]:
+            original_timestamp_found = False
+            for predicted_index, predicted_timestamp in enumerate(timestamps):
+                if original_timestamp[0] == predicted_timestamp[0] and original_timestamp[1] == predicted_timestamp[1]:
+                    modified_timestamps.append(predicted_timestamp)
+                    modified_captions.append(captions[predicted_index])
+                    original_timestamp_found = True
+            if original_timestamp_found is False:
                 print(video_id)
                 raise Exception('Mismatched start/end time for metadata and predicted result timestamps')
-        
+
         return_dict[video_id] = {
             "duration" : video_duration,
-            "timestamps": timestamps,
-            "sentences": captions
+            "timestamps": modified_timestamps,
+            "sentences": modified_captions
         }
     return return_dict, missing_video_ids
 
-def finalDataset(captionDict, subtitlesDict):
+def prepareFinalDataset(captionDict, subtitlesDict):
     missing_video_ids = []
     for video_id in list(captionDict.keys()):
         if video_id not in list(subtitlesDict.keys()):
@@ -96,12 +102,14 @@ if __name__ == "__main__":
     VAL_1_META_FILE_PATH = 'C:/ACS/MasterThesis/Models/Video-Keyword-Extractor/multiModalDense/data/val_1_meta.csv'
     VAL_1_PREDICTION_JSON_FILE_PATH = 'C:/ACS/MasterThesis/Models/Video-Keyword-Extractor/multiModalDense/data/predictions_validate_1_epoch31.json'
     # VAL_1_RESULTS_JSON_FILE_PATH = 'C:/ACS/MasterThesis/Models/Video-Keyword-Extractor/multiModalDense/data/val_1_no_missings.json'
-    # subtitle_dict = readMetaCSVtoDict(VAL_1_META_FILE_PATH)
+    subtitle_dict = readMetaCSVtoDict(VAL_1_META_FILE_PATH)
     # print()
     # caption_dict = readPredictionJSON(VAL_1_RESULTS_JSON_FILE_PATH)
 
     return_dict, missing_video_ids = readPredictedJSON(VAL_1_PREDICTION_JSON_FILE_PATH, VAL_1_META_FILE_PATH)
-    # missing_video_ids = finalDataset(caption_dict, subtitle_dict)
+    missing_video_ids = prepareFinalDataset(return_dict, subtitle_dict)
+    with open('test_file.json', 'w') as outf:
+        json.dump(return_dict, outf)
     if len(missing_video_ids) == 0:
         for video_key in list(return_dict.keys()):
             print(return_dict[video_key])
@@ -109,3 +117,5 @@ if __name__ == "__main__":
     else:
         print(missing_video_ids)
         print(len(missing_video_ids))
+    
+    

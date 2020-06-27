@@ -1,6 +1,6 @@
 import pke
 
-def createInstanceOfPkeAlgo():
+def createInstanceOfPkeAlgo(algorithm):
     switcher = {
         1: topicRank,
         2: topicalPageRank,
