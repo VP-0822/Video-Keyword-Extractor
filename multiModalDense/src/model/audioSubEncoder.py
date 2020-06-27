@@ -8,7 +8,7 @@ class EncoderLayer(nn.Module):
     """
         Encoder Layer of the transformer model. Encoder Layer is used to encode Video, Audio and Subtitles inputs individually. 
     """
-    def __init__(self, model_dimension, dropout_percentage, number_of_heads, feedforward_dimension):
+    def __init__(self, model_dimension, video_relu_model_dimension, dropout_percentage, number_of_heads, feedforward_dimension):
         """
             Creates 2 copies of ResidualConnection, multiheaded attention with number_of_heads heads and fully-connected layer of shape (model_dimension, feedforward_dimension)
             Args:
@@ -18,11 +18,16 @@ class EncoderLayer(nn.Module):
                 feedforward_dimension: units of feedforward layer. Generally 2048 units
         """
         super(EncoderLayer, self).__init__()
-        self.res_layers = clone(ResidualConnection(model_dimension, dropout_percentage), 2)
+        self.res_layers = clone(ResidualConnection(model_dimension, dropout_percentage), 3)
         self.self_att = MultiheadedAttention(model_dimension, number_of_heads)
+        print('model dimension: ' + str(model_dimension))
+        print('video model dimension: ' + str(video_relu_model_dimension))
+        print('===============')
+        self.fc1 = nn.Linear(video_relu_model_dimension, model_dimension)
+        self.contextual_attention = MultiheadedAttention(model_dimension, number_of_heads)
         self.feed_forward = PositionwiseFeedForward(model_dimension, feedforward_dimension)
         
-    def forward(self, x, source_mask): # x - (B, seq_len, d_model) src_mask (B, 1, S)
+    def forward(self, x, x_video_relu, source_mask): # x - (B, seq_len, d_model) src_mask (B, 1, S)
         """
             Following steps are performed to encode input sequence
             1. Lambda function for performing self-attention is created
@@ -39,12 +44,15 @@ class EncoderLayer(nn.Module):
         # thus, lambda is used instead of just `self.self_att(x, x, x)` which outputs 
         # the output of the self attention refer http://nlp.seas.harvard.edu/2018/04/03/attention.html
         sublayer0 = lambda x: self.self_att(x, x, x, source_mask) # Query, Key and Value are same for self-attention
-        sublayer1 = self.feed_forward
+        video_encoder_output = self.fc1(x_video_relu)
+        sublayer1 = lambda x: self.contextual_attention(x, video_encoder_output, video_encoder_output, source_mask)
+        sublayer2 = self.feed_forward
         
         x = self.res_layers[0](x, sublayer0)
-        x, x_video_encoded = self.res_layers[1](x, sublayer1, True)
+        x = self.res_layers[1](x, sublayer1)
+        x, _ = self.res_layers[2](x, sublayer2, True)
         
-        return x, x_video_encoded
+        return x
     
 class Encoder(nn.Module):
     """
@@ -52,7 +60,7 @@ class Encoder(nn.Module):
         and produces new output. Number of layers are derived from number_of_layers parameter. 
     """
     
-    def __init__(self, model_dimension, dropout_percentage, number_of_heads, feedforward_dimension, number_of_layers):
+    def __init__(self, model_dimension, video_model_dimension, dropout_percentage, number_of_heads, feedforward_dimension, number_of_layers):
         """
             Create EncoderLayer copy number_of_layers times.
             Args:
@@ -63,9 +71,9 @@ class Encoder(nn.Module):
                 number_of_layers: Number of encoder layers
         """
         super(Encoder, self).__init__()
-        self.enc_layers = clone(EncoderLayer(model_dimension, dropout_percentage, number_of_heads, feedforward_dimension), number_of_layers)
+        self.enc_layers = clone(EncoderLayer(model_dimension, video_model_dimension, dropout_percentage, number_of_heads, feedforward_dimension), number_of_layers)
         
-    def forward(self, x, source_mask):
+    def forward(self, x, x_video_relu, source_mask):
         """
             Input is passed through first_layer and output of each layer is passed as input to next layer. This is done to apply deep learning by creating dense network.
             Args:
@@ -75,6 +83,6 @@ class Encoder(nn.Module):
                 encoder output of shape (batch_size, sequence_length, model_dimension)
         """
         for layer in self.enc_layers:
-            x, x_video_encoded = layer(x, source_mask)
+            x = layer(x, x_video_relu, source_mask)
         
-        return x, x_video_encoded
+        return x
