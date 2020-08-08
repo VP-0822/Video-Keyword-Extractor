@@ -26,9 +26,9 @@ class BidirectionalLSTMModel(CaptionFrameModel):
         cmodel_dense = TimeDistributed(Dense(512,kernel_initializer='random_normal', name='caption_dense')) (cmodel_embedding)
         if self.dropOutAtCaption is not None:
             cmodel_dropout = TimeDistributed(Dropout(self.dropOutAtCaption, name='caption_dropout')) (cmodel_dense)
-            cmodel_lstm = LSTM(512, return_sequences=True,kernel_initializer='random_normal', name='caption_lstm') (cmodel_dropout)
+            cmodel_lstm = Bidirectional(LSTM(512, return_sequences=True,kernel_initializer='random_normal', name='caption_lstm')) (cmodel_dropout)
         else:
-            cmodel_lstm = LSTM(512, return_sequences=True,kernel_initializer='random_normal', name='caption_lstm') (cmodel_dense)
+            cmodel_lstm = Bidirectional(LSTM(512, return_sequences=True,kernel_initializer='random_normal', name='caption_lstm')) (cmodel_dense)
 
         # Video frames input shape is (number_of_frames, frame_features) i.e. (None, 2048) In case of Video2Description model it is (40, 2048)
         # And when we fit, we will do it in batches so currently batch dimension will be (None, None, 2048)
@@ -47,7 +47,7 @@ class BidirectionalLSTMModel(CaptionFrameModel):
 
         combined_model = concatenate([cmodel_lstm, imodel_repeatvector], axis=-1)
         combined_model_dropout = TimeDistributed(Dropout(self.dropOutAtFinal, name='final_dropout')) (combined_model)
-        combined_model_lstm = LSTM(1024,return_sequences=True, kernel_initializer='random_normal',recurrent_regularizer=l2(0.01), name='final_lstm') (combined_model_dropout)
+        combined_model_lstm = Bidirectional(LSTM(1024,return_sequences=True, kernel_initializer='random_normal',recurrent_regularizer=l2(0.01), name='final_lstm')) (combined_model_dropout)
         combined_model_outputs = TimeDistributed(Dense(self.total_vocab_size, activation='softmax', name='frame_dense_with_activation'))(combined_model_lstm)
 
         final_model = Model(inputs=[cmodel_input, imodel_input], outputs= [combined_model_outputs])
