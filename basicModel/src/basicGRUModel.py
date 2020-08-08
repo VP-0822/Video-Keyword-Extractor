@@ -1,5 +1,5 @@
 from tensorflow.keras import Input, layers
-from tensorflow.keras.layers import LSTM, Dense, TimeDistributed, Dropout, BatchNormalization, Activation, RepeatVector, Embedding
+from tensorflow.keras.layers import GRU, LSTM, Dense, TimeDistributed, Dropout, BatchNormalization, Activation, RepeatVector, Embedding
 from tensorflow.keras.models import Model
 from tensorflow.keras.backend import concatenate
 from tensorflow.keras.regularizers import l2
@@ -40,11 +40,11 @@ class BasicLSTMModel(CaptionFrameModel):
         imodel_batchnorm = TimeDistributed(BatchNormalization(axis=-1, name='frame_batchnorm')) (imodel_dropout)
         imodel_active = Activation('tanh', name='frame_tanh_activation') (imodel_batchnorm)
         if use_attention is True:
-            imodel_lstm = LSTM(1024, return_sequences=True, kernel_initializer='random_normal', name='frame_lstm') (imodel_active)
-            imodel_lstm = Attention() (imodel_lstm)
+            imodel_gru = GRU(1024, return_sequences=True, kernel_initializer='random_normal', name='frame_gru') (imodel_active)
+            imodel_gru = Attention() (imodel_gru)
         else :
-            imodel_lstm = LSTM(1024, return_sequences=False, kernel_initializer='random_normal', name='frame_lstm') (imodel_active)
-        imodel_repeatvector = RepeatVector(self.final_caption_length, name='frame_repeatvector') (imodel_lstm)
+            imodel_gru = GRU(1024, return_sequences=False, kernel_initializer='random_normal', name='frame_gru') (imodel_active)
+        imodel_repeatvector = RepeatVector(self.final_caption_length, name='frame_repeatvector') (imodel_gru)
 
         combined_model = concatenate([cmodel_lstm, imodel_repeatvector], axis=-1)
         combined_model_dropout = TimeDistributed(Dropout(self.dropOutAtFinal, name='final_dropout')) (combined_model)
