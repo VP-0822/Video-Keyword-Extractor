@@ -7,6 +7,8 @@ from datasetPreprocessor import DatasetPreprocessor
 from basicLSTMModel import BasicLSTMModel
 from bidirectionalLSTMModel import BidirectionalLSTMModel
 from bidirectionalGRUModel import BidirectionalGRUModel
+from basicGRUModel import BasicGRUModel
+from basicLSTMModel import BasicLSTMModel
 
 # Load already defined video Ids
 sample_video_ids = None
@@ -17,10 +19,10 @@ if os.path.exists(config.TRAINED_VIDEO_ID_NPY_FILE):
 # Load preprocessed data
 NUMBER_OF_SAMPLES = 1969
 TRAIN_TEST_SPLIT = 0.15
-NUMBER_OF_VALIDATION_SAMPLES = 50
+NUMBER_OF_VALIDATION_SAMPLES = 200
 EMBEDDING_DIM = 200
 CAPTIONS_PER_VIDEO = 4
-WORD_FREQ_THRESHOLD=3
+WORD_FREQ_THRESHOLD = 2
 SHUFFLE_SAMPLES = False
 datasetPreprocessor = DatasetPreprocessor(NUMBER_OF_SAMPLES, TRAIN_TEST_SPLIT, NUMBER_OF_VALIDATION_SAMPLES, sample_video_ids)
 # pickleFileList = [config.PICKLE_FILE_PATH]
@@ -44,7 +46,7 @@ ONLY_PREDICT = False
 CONTINUE_TRAINING = False
 VIDEO_INPUT_SHAPE = (40,2048)
 # VIDEO_INPUT_SHAPE = (None,2048)
-NO_EPOCHS = 100
+NO_EPOCHS = 250
 # For Single caption per video
 # STEPS_FOR_TRAIN_SAMPLES = 48
 # TRAINING_BATCH_SIZE = 34
@@ -61,6 +63,9 @@ OPTIMIZER = Adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.99, epsilon=1e-07, 
 
 if ONLY_PREDICT is False:
     model = BidirectionalGRUModel(cp, EMBEDDING_DIM, VIDEO_INPUT_SHAPE, vocabEmbedding)
+    #model = BidirectionalLSTMModel(cp, EMBEDDING_DIM, VIDEO_INPUT_SHAPE, vocabEmbedding)
+    #model = BasicGRUModel(cp, EMBEDDING_DIM, VIDEO_INPUT_SHAPE, vocabEmbedding)
+    #model = BasicLSTMModel(cp, EMBEDDING_DIM, VIDEO_INPUT_SHAPE, vocabEmbedding)
     model.buildModel(use_attention=True)
     model.compileModel(OPTIMIZER)
     # Load pretrained Model

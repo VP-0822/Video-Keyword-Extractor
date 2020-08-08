@@ -8,7 +8,7 @@ from modelCallback import BasicModelCallback
 from simpleAttention import Attention
 import tqdm
 
-class BasicLSTMModel(CaptionFrameModel):
+class BasicGRUModel(CaptionFrameModel):
     def __init__(self, captionPreprocessor, embedding_vector_dim, video_frame_shape, embedding_weights=None, dropOutAtFrame=0.2, dropOutAtCaption=None, dropOutAtFinal=0.2):
         self.embedding_dim = embedding_vector_dim
         self.video_frame_shape = video_frame_shape
