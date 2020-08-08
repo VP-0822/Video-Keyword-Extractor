@@ -70,7 +70,7 @@ class BidirectionalGRUModel(CaptionFrameModel):
     def compileModel(self, optimizer):
         if self.useLabelSmoothing:
             print('Using label smoothing..')
-            loss = CategoricalCrossentropy(label_smoothing=0.2)
+            loss = CategoricalCrossentropy(label_smoothing=0.1)
         else:
             loss = CategoricalCrossentropy()
         self.model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
