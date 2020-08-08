@@ -46,7 +46,7 @@ ONLY_PREDICT = False
 CONTINUE_TRAINING = False
 VIDEO_INPUT_SHAPE = (40,2048)
 # VIDEO_INPUT_SHAPE = (None,2048)
-NO_EPOCHS = 250
+NO_EPOCHS = 450
 # For Single caption per video
 # STEPS_FOR_TRAIN_SAMPLES = 48
 # TRAINING_BATCH_SIZE = 34
@@ -54,18 +54,18 @@ NO_EPOCHS = 250
 # VALIDATION_BATCH_SIZE = 25
 
 # For multiple captions per video (4 captions)
-STEPS_FOR_TRAIN_SAMPLES = 96
-TRAINING_BATCH_SIZE = 68
-STEPS_FOR_VALIDATION_SAMPLES = 8
-VALIDATION_BATCH_SIZE = 25
+STEPS_FOR_TRAIN_SAMPLES = 94
+TRAINING_BATCH_SIZE = 64
+STEPS_FOR_VALIDATION_SAMPLES = 16
+VALIDATION_BATCH_SIZE = 50
 
 OPTIMIZER = Adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.99, epsilon=1e-07, amsgrad=True, name='Adam')
 
 if ONLY_PREDICT is False:
-    model = BidirectionalGRUModel(cp, EMBEDDING_DIM, VIDEO_INPUT_SHAPE, vocabEmbedding)
-    #model = BidirectionalLSTMModel(cp, EMBEDDING_DIM, VIDEO_INPUT_SHAPE, vocabEmbedding)
-    #model = BasicGRUModel(cp, EMBEDDING_DIM, VIDEO_INPUT_SHAPE, vocabEmbedding)
-    #model = BasicLSTMModel(cp, EMBEDDING_DIM, VIDEO_INPUT_SHAPE, vocabEmbedding)
+    model = BidirectionalGRUModel(cp, EMBEDDING_DIM, VIDEO_INPUT_SHAPE, vocabEmbedding, useLabelSmoothing=True)
+    #model = BidirectionalLSTMModel(cp, EMBEDDING_DIM, VIDEO_INPUT_SHAPE, vocabEmbedding, useLabelSmoothing=True)
+    #model = BasicGRUModel(cp, EMBEDDING_DIM, VIDEO_INPUT_SHAPE, vocabEmbedding, useLabelSmoothing=True)
+    #model = BasicLSTMModel(cp, EMBEDDING_DIM, VIDEO_INPUT_SHAPE, vocabEmbedding, useLabelSmoothing=True)
     model.buildModel(use_attention=True)
     model.compileModel(OPTIMIZER)
     # Load pretrained Model

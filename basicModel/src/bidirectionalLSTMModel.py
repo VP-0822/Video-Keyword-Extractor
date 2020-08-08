@@ -3,12 +3,13 @@ from tensorflow.keras.layers import LSTM, Dense, TimeDistributed, Dropout, Batch
 from tensorflow.keras.models import Model
 from tensorflow.keras.backend import concatenate
 from tensorflow.keras.regularizers import l2
+from tensorflow.keras.losses import CategoricalCrossentropy
 from captionFrameModel import CaptionFrameModel
 from modelCallback import BasicModelCallback
 from simpleAttention import Attention
 import tqdm
 class BidirectionalLSTMModel(CaptionFrameModel):
-    def __init__(self, captionPreprocessor, embedding_vector_dim, video_frame_shape, embedding_weights=None, dropOutAtFrame=0.2, dropOutAtCaption=None, dropOutAtFinal=0.2):
+    def __init__(self, captionPreprocessor, embedding_vector_dim, video_frame_shape, embedding_weights=None, dropOutAtFrame=0.2, dropOutAtCaption=None, dropOutAtFinal=0.2, useLabelSmoothing=True):
         self.embedding_dim = embedding_vector_dim
         self.video_frame_shape = video_frame_shape
         self.embedding_weights =  embedding_weights
@@ -16,6 +17,7 @@ class BidirectionalLSTMModel(CaptionFrameModel):
         self.dropOutAtCaption = dropOutAtCaption
         self.dropOutAtFinal = dropOutAtFinal
         self.captionPreprocessor = captionPreprocessor
+        self.useLabelSmoothing = useLabelSmoothing
         super().__init__(self.captionPreprocessor.getMaximumCaptionLength(), self.captionPreprocessor.getVocabSize())
 
     def buildModel(self, use_attention=False):
@@ -64,7 +66,12 @@ class BidirectionalLSTMModel(CaptionFrameModel):
         self.model = final_model
 
     def compileModel(self, optimizer):
-        self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+        if self.useLabelSmoothing:
+            print('Using label smoothing..')
+            loss = CategoricalCrossentropy(label_smoothing=0.2)
+        else:
+            loss = CategoricalCrossentropy()
+        self.model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
         self.model.summary()
 
         print('Model created successfully')
