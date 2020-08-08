@@ -14,7 +14,7 @@ class BasicModelCallback(callbacks.Callback):
         print('Epoch Training loss: ' + str(loss))
         # print('Epoch Training Accuracy: ' + str(acc))
         print('=========================================')
-        if epoch % 20 is 0 and epoch is not 0:
+        if epoch % 40 is 0 and epoch is not 0:
             print('writing to model weights file')
             self.final_model.save_weights(self.folderName + 'trainedModel_' + str(epoch) + '.hdf5')
     
