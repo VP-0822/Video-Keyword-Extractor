@@ -40,10 +40,10 @@ class BasicLSTMModel(CaptionFrameModel):
         imodel_batchnorm = TimeDistributed(BatchNormalization(axis=-1, name='frame_batchnorm')) (imodel_dropout)
         imodel_active = Activation('tanh', name='frame_tanh_activation') (imodel_batchnorm)
         if use_attention is True:
-            imodel_lstm = LSTM(1024, return_sequences=True, kernel_initializer='random_normal', name='frame_lstm') (imodel_active)
+            imodel_lstm = LSTM(1024, return_sequences=True, kernel_initializer='random_normal', name='frame_encoder_lstm') (imodel_active)
             imodel_lstm = Attention() (imodel_lstm)
         else :
-            imodel_lstm = LSTM(1024, return_sequences=False, kernel_initializer='random_normal', name='frame_lstm') (imodel_active)
+            imodel_lstm = LSTM(1024, return_sequences=False, kernel_initializer='random_normal', name='frame_encoder_lstm') (imodel_active)
         imodel_repeatvector = RepeatVector(self.final_caption_length, name='frame_repeatvector') (imodel_lstm)
 
         combined_model = concatenate([cmodel_lstm, imodel_repeatvector], axis=-1)
