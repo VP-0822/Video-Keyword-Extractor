@@ -29,9 +29,9 @@ class BidirectionalGRUModel(CaptionFrameModel):
         cmodel_dense = TimeDistributed(Dense(512,kernel_initializer='random_normal', name='caption_dense')) (cmodel_embedding)
         if self.dropOutAtCaption is not None:
             cmodel_dropout = TimeDistributed(Dropout(self.dropOutAtCaption, name='caption_dropout')) (cmodel_dense)
-            cmodel_gru = Bidirectional(GRU(512, return_sequences=True,kernel_initializer='random_normal', name='caption_gru')) (cmodel_dropout)
+            cmodel_gru = LSTM(512, return_sequences=True,kernel_initializer='random_normal', name='caption_gru') (cmodel_dropout)
         else:
-            cmodel_gru = Bidirectional(GRU(512, return_sequences=True,kernel_initializer='random_normal', name='caption_gru')) (cmodel_dense)
+            cmodel_gru = LSTM(512, return_sequences=True,kernel_initializer='random_normal', name='caption_gru') (cmodel_dense)
 
         # Video frames input shape is (number_of_frames, frame_features) i.e. (None, 2048) In case of Video2Description model it is (40, 2048)
         # And when we fit, we will do it in batches so currently batch dimension will be (None, None, 2048)
@@ -51,7 +51,7 @@ class BidirectionalGRUModel(CaptionFrameModel):
 
         combined_model = concatenate([cmodel_gru, imodel_repeatvector], axis=-1)
         combined_model_dropout = TimeDistributed(Dropout(self.dropOutAtFinal, name='final_dropout')) (combined_model)
-        combined_model_gru = Bidirectional(GRU(1024,return_sequences=True, kernel_initializer='random_normal',recurrent_regularizer=l2(0.01), name='final_gru')) (combined_model_dropout)
+        combined_model_gru = LSTM(1024,return_sequences=True, kernel_initializer='random_normal',recurrent_regularizer=l2(0.01), name='final_gru') (combined_model_dropout)
         combined_model_outputs = TimeDistributed(Dense(self.total_vocab_size, activation='softmax', name='frame_dense_with_activation'))(combined_model_gru)
 
         final_model = Model(inputs=[cmodel_input, imodel_input], outputs= [combined_model_outputs])
