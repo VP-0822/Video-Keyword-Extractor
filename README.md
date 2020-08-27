@@ -1,5 +1,5 @@
 # Video-Keyword-Extractor
-A Master Thesis Project on Video Keyword Extractor using Video Summarization techniques.
+A Master Thesis Project on Video Keyword Extractor using Video Summarization techniques.  
 
 # Pipeline
 The pipeline consists of 3 stages,
@@ -19,11 +19,14 @@ The architecture of RNN-based video captioning model is as below. The model was 
 The author have initially implemented the model referring the <a href="https://arxiv.org/abs/2003.07758">Iashin et al.</a> paper. The following image shows the architecture of the MDVC model. The model was trained using the ActivityNet dataset.
 ![MDVC Architecture](https://github.com/VP-0822/Video-Keyword-Extractor/blob/master/images/MDVC.png)
 
-Based on above approach the author of the thesis proposed new model to improve the transformer by encoding visual and audio modality inputs together, using the technique proposed by the <a href="https://arxiv.org/abs/1809.04938">LiveBot</a>. The intention was to improve the caption sentence quality. For e.g. if in video 2 people are having conversations related to animals, The current state-of-the-art has the caption 'Two people are talking in the room.' , What the caption should be 'Two people are talking about animals in the room.' Below image shows the modified audio encoder,
+Based on above approach the author of the thesis proposed new model to improve the transformer by encoding visual and audio modality inputs together, using the technique proposed by the <a href="https://arxiv.org/abs/1809.04938">LiveBot</a>. The intention was to improve the caption sentence quality. For e.g. if in video 2 people are having conversations related to animals, The current state-of-the-art has the caption 'Two people are talking in the room.' , What the caption should be 'Two people are talking about animals in the room.'  
+Branch: <a href="https://github.com/VP-0822/Video-Keyword-Extractor/tree/tryout-livebot">MDVC-Variant</a>    
+Below image shows the modified audio encoder,
 ![MDVC Variant Architecture](https://github.com/VP-0822/Video-Keyword-Extractor/blob/master/images/MDVCaudioEncoder.png)
 
 ## Video Keyword Extraction
-Author has added a program to extract keywords from the generated captions from the above model and subtitles using the YouTube ASR technique. Author has used python toolkit for keyword extraction, <a href="https://github.com/boudinfl/pke">pke</a>.
+Author has added a program to extract keywords from the generated captions from the above model and subtitles using the YouTube ASR technique. Author has used python toolkit for keyword extraction, <a href="https://github.com/boudinfl/pke">pke</a>.   
+Branch: <a href="https://github.com/VP-0822/Video-Keyword-Extractor/tree/keyword_extractor">Keyword-Extractor</a>  
 
 ## Results
 Video Id: kXbc9D0sF5k (https://www.youtube.com/watch?v=kXbc9D0sF5k)
