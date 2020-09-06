@@ -30,7 +30,6 @@ class PositionwiseFeedForward(nn.Module):
                 output with same dimension as input (batch_size, sequence_length, model_dimension)
         """
         x = self.fc1(x)
-        x = F.relu(x)
-        x = self.fc2(x)
-        
-        return x
+        x_relu = F.relu(x)
+        x = self.fc2(x_relu)
+        return x, x_relu

@@ -48,7 +48,7 @@ class DecoderLayer(nn.Module):
         
         x = self.res_layers[0](x, sublayer0)
         x = self.res_layers[1](x, sublayer1)
-        x = self.res_layers[2](x, sublayer2)
+        x, _ = self.res_layers[2](x, sublayer2, True)
         
         return x
     

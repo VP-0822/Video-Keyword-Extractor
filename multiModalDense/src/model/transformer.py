@@ -4,6 +4,7 @@ from model.positionalEncoder import PositionalEncoder
 from model.encoder import Encoder
 from model.decoder import Decoder
 from model.generator import Generator
+import model.audioSubEncoder as ase
 
 class MultiModalTransformer(nn.Module):
     """
@@ -53,8 +54,8 @@ class MultiModalTransformer(nn.Module):
         self.pos_emb_subs  = PositionalEncoder(subtitle_model_dimension, dropout_percentage)
         self.pos_emb_audio = PositionalEncoder(audio_model_dimension, dropout_percentage)
         self.pos_emb_video = PositionalEncoder(video_model_dimension, dropout_percentage)
-        self.encoder_subs =  Encoder(subtitle_model_dimension,  dropout_percentage, number_of_heads, subtitle_feedforward_dimension,  subtitle_number_of_layers)
-        self.encoder_audio = Encoder(audio_model_dimension, dropout_percentage, number_of_heads, audio_feedforward_dimension, audio_number_of_layers)
+        self.encoder_subs =  Encoder(subtitle_model_dimension, dropout_percentage, number_of_heads, subtitle_feedforward_dimension,  subtitle_number_of_layers)
+        self.encoder_audio = ase.Encoder(audio_model_dimension, video_feedforward_dimension, dropout_percentage, number_of_heads, audio_feedforward_dimension, audio_number_of_layers)
         self.encoder_video = Encoder(video_model_dimension, dropout_percentage, number_of_heads, video_feedforward_dimension, video_number_of_layers)
         self.decoder_subs =  Decoder(subtitle_model_dimension,  dropout_percentage, number_of_heads, subtitle_feedforward_dimension,  subtitle_number_of_layers)
         self.decoder_audio = Decoder(audio_model_dimension, dropout_percentage, number_of_heads, audio_feedforward_dimension, audio_number_of_layers)
@@ -110,9 +111,9 @@ class MultiModalTransformer(nn.Module):
         trg_video = self.pos_emb_video(trg_video)
         
         # encode and decode
-        memory_subs = self.encoder_subs(src_subs, src_subs_mask)
-        memory_audio = self.encoder_audio(src_audio, src_mask)
-        memory_video = self.encoder_video(src_video, src_mask)
+        memory_video, memory_video_relu = self.encoder_video(src_video, src_mask)
+        memory_subs, _ = self.encoder_subs(src_subs, src_subs_mask)
+        memory_audio = self.encoder_audio(src_audio, memory_video_relu, src_mask)
         
         out_subs = self.decoder_subs(trg_subs, memory_subs, src_subs_mask, trg_mask)
         out_audio = self.decoder_audio(trg_audio, memory_audio, src_mask, trg_mask)
