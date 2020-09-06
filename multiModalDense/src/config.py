@@ -39,6 +39,9 @@ SAVE_MODEL_ON_LAST_EPOCH = True
 SAVE_INTERMEDIATE = True
 SAVE_INTERMEDIATE_AT_EVERY_NTH_EPOCH = 5
 USE_DEFAULT_CAPTION_LENGTH = 50
+KEYWORD_EXTRACTOR_ALGORITHM = 'YAKE'
+N_BEST_KEYWORDS = 10
+KEYWORD_EXTRACTION_SAMPLE_VIDEO_IDS = ['v_5ptxyeHlcwM', 'v_JDn95TW9WoM']
 
 # file paths
 LOG_PATH = os.path.join(root_dir,'./log')
@@ -51,3 +54,8 @@ VALIDATION_1_META_FILE_PATH = os.path.join(root_dir,'./../data/val_1_meta.csv')
 VALIDATION_2_META_FILE_PATH = os.path.join(root_dir,'./../data/val_2_meta.csv')
 VALIDATION_1_REFERENCE_JSON = './../data/val_1.json'
 VALIDATION_2_REFERENCE_JSON = './../data/val_2.json'
+PREDICTED_VAL_1_JSON = './../data/predictions_validate_1_epoch31.json'
+PREDICTED_VAL_2_JSON = './../data/predictions_validate_2_epoch31.json'
+VIDEO_DESCRIPTION_VALIDATION_1_JSON = './../data/video_description_validatation_1.json'
+VIDEO_DESCRIPTION_VALIDATION_2_JSON = './../data/video_description_validatation_2.json'
+KEYWORD_EXTRACTOR_OUTPUT_JSON = './../data/results_keyword_extractor.json'
