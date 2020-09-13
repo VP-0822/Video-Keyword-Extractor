@@ -36,7 +36,7 @@ def greedyDecoder(model, final_features_for_model, maximum_caption_length, start
 
     return target_vocab_indices
 
-def predictForMonitorVideos(model, monitor_video_ids, validation_multimodal_dataset_iterator, maximum_caption_length, use_categories=None):
+def predictForMonitorVideos(model, monitor_video_ids, validation_multimodal_dataset_iterator, maximum_caption_length, use_categories=None, to_json=False, trim_start_end=False):
     """
         Predict caption for specified video one word by one word. Using greedy decoder functionality
     """
@@ -53,16 +53,25 @@ def predictForMonitorVideos(model, monitor_video_ids, validation_multimodal_data
     original_video_indecies = []
     original_start_time = []
     original_end_time = []
+    subtitles = []
     for monitor_video_id in monitor_video_ids:
         meta_subset = video_metadata_list[video_metadata_list['video_id'] == monitor_video_id]
         # For each proposal subvideo 
-        for (_, _, start, end, _, _, _, _, video_index) in meta_subset.values:
+        for (_, _, start, end, _, _, subs, _, video_index) in meta_subset.values:
             original_video_indecies.append(video_index)
             original_start_time.append(start)
             original_end_time.append(end)
+            subtitles.append(subs)
 
     filtered_video_ids, filter_video_start_times, filtered_video_end_times, filtered_video_duration_times, \
     filtered_video_categories, filtered_video_rgb_stacks, filtered_video_flow_stacks, filtered_audio_stacks = validation_multimodal_dataset_iterator.getMultiModalDataset().getItems(original_video_indecies, True) # true for onebyoneprediction
+
+    predictions = None
+    if to_json is True:
+        predictions = {
+            'videoId': '',
+            'results': []
+        }
 
     for iterator_index, video_index in enumerate(original_video_indecies):
         video_rgb_features = filtered_video_rgb_stacks[iterator_index]
@@ -74,6 +83,7 @@ def predictForMonitorVideos(model, monitor_video_ids, validation_multimodal_data
         video_category = filtered_video_categories[iterator_index]
         video_start_time = original_start_time[iterator_index]
         video_end_time = original_end_time[iterator_index]
+        video_sub = subtitles[iterator_index]
 
         log_text += f'\t {video_id} {video_index}\n'
 
@@ -103,12 +113,26 @@ def predictForMonitorVideos(model, monitor_video_ids, validation_multimodal_data
         predicted_row_wise_caption_words_list.append(trg_words)
         final_caption = ' '.join(trg_words)
 
+        if trim_start_end is True:
+            final_caption = final_caption.strip('<s>')
+            final_caption = final_caption.strip('</s>')
+            final_caption = final_caption.strip(' ')
         log_text += f'\t Predicted caption: {final_caption} \n'
         log_text += f'\t Ground truth proposals: {video_start_time//60:.0f}:{video_start_time%60:02.0f} {video_end_time//60:.0f}:{video_end_time%60:02.0f} \n'
-        log_text += f'URL: https://www.youtube.com/embed/{video_id[2:]}?start={video_start_time}&end={video_end_time}&rel=0 \n'
+        log_text += f'URL: https://www.youtube.com/embed/{video_id[2:]}?start={video_start_time}&end={video_end_time}&version=3 \n'
         log_text += '\t \n'
+        if to_json is True:
 
-    return log_text
+            segment = {
+                'caption': final_caption,
+                'subtitle': video_sub,
+                'timestamp': [int(round(video_start_time)), int(round(video_end_time))],
+                'href': f'https://www.youtube.com/embed/{video_id[2:]}?start={int(round(video_start_time))}&end={int(round(video_end_time))}&version=3'
+            }
+            predictions['videoId'] = video_id[2:]
+            predictions['results'].append(segment)
+
+    return log_text, predictions
 
 def encodeSubtitleToTokenIndices(train_subs_vocab, video_index, video_metadata_list, start_token_index, end_token_index, device):
     subs = video_metadata_list.iloc[video_index]['subs']

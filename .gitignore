@@ -131,3 +131,4 @@ dmypy.json
 data/
 log/
 quick-access.txt
+frontend/video_automatic_keyword_extractor/node_modules

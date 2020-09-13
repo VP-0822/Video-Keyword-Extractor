@@ -1,0 +1,155 @@
+body {
+  text-align: center;
+  font-family: "Josefin Sans", Helvetica, Arial, sans-serif;
+  color: #3f4850;
+}
+
+h2 {
+  font-size: 2em;
+  margin: 52px 0 40px;
+  text-transform: capitalize;
+  color: #051c33;
+}
+
+h1 {
+  font-family: "Lobster", "Josefin Sans", Helvetica, Arial, sans-serif;
+  font-size: 2em;
+  color: #051c33;
+}
+
+ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.search-form {
+  max-width: 460px;
+  display: flex;
+  margin: 0 auto 10px;
+}
+
+.search-form button {
+  outline: none;
+  border: none;
+  padding: 0px 15px;
+  border-radius: 0 0.35em 0.35em 0;
+  cursor: pointer;
+}
+
+.active {
+  background-color: #051c33;
+  cursor: pointer;
+}
+
+.inactive {
+  background-color: #6c757d;
+  cursor: none;
+}
+
+input {
+  font-size: 1em;
+  width: 100%;
+  background-color: #edeff0;
+  padding: 10px 15px;
+  border: 3px solid #d7dbdf;
+  border-right: none;
+  border-radius: 0.35em 0 0 0.35em;
+  outline: none;
+}
+
+.loader {
+  border: 16px solid #f3f3f3;
+  /* Light grey */
+  border-top: 16px solid #051c33;
+  /* Blue */
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 2s linear infinite;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.card {
+  /* Add shadows to create the "card" effect */
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  transition: 0.3s;
+  width: 450px;
+  border-radius: 5px;
+  border: 1px solid;
+}
+
+/* On mouse-over, add a deeper shadow */
+.card:hover {
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+}
+
+/* Add some padding inside the card container */
+.dataContainer {
+  padding: 2px 16px;
+  height: 300px;
+  overflow: auto;
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: auto auto;
+  padding: 10px;
+  grid-column-gap: 50px;
+  grid-row-gap: 50px;
+}
+.grid-item {
+  padding: 20px;
+  text-align: left;
+  display: inline-block;
+}
+
+.containerTitle {
+  font-size: 18px;
+  font-family: "Josefin Sans", Helvetica, Arial, sans-serif;
+  color: #6c757d;
+}
+
+.keywordTile {
+  border: 1px solid;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  padding: 5px;
+  width: auto;
+  display: inline-block;
+  margin: 5px;
+}
+
+.scoreSpan {
+  font-size: 10px;
+  display: block;
+}
+
+.keywordSpan {
+  font-weight: 700;
+}
+
+.react-player {
+  padding-left: 10px;
+  padding-top: 10px;
+}
+
+.examplePara {
+  font-size: 15px;
+  font-style: italic;
+  display: block;
+}
+
+.segmentInfo {
+  margin: 5px 10px;
+}
