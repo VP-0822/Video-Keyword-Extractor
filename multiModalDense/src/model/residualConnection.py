@@ -28,7 +28,6 @@ class ResidualConnection(nn.Module):
         """
         res = self.norm(x)
         if multireturn is False:
-            print(res.shape)
             res = sublayer(res)
             res = self.dropout(res)
             return res
