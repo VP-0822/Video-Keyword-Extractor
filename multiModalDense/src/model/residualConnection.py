@@ -16,7 +16,7 @@ class ResidualConnection(nn.Module):
         self.norm = nn.LayerNorm(input_shape_without_batchsize)
         self.dropout = nn.Dropout(dropout_percentage)
         
-    def forward(self, x, sublayer):
+    def forward(self, x, sublayer, multireturn=False):
         """
             Apply residual connection around passed sublayer. This involves operation of applying sublayer after layerNorm and at the end element-wise summation of
             residual connection (Actual input) and output of sublayer.
@@ -27,7 +27,13 @@ class ResidualConnection(nn.Module):
                 output of shape (batch_size, sequence_length, model_dimension)
         """
         res = self.norm(x)
-        res = sublayer(res)
+        if multireturn is False:
+            print(res.shape)
+            res = sublayer(res)
+            res = self.dropout(res)
+            return res
+
+        res, sublayer_res = sublayer(res)
         res = self.dropout(res)
         
-        return x + res
+        return x + res, sublayer_res
