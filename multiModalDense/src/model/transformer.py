@@ -62,9 +62,9 @@ class MultiModalTransformer(nn.Module):
         self.encoder_video = ce.Encoder(video_model_dimension, subtitle_model_dimension, audio_model_dimension, dropout_percentage, number_of_heads, video_feedforward_dimension, video_number_of_layers)
         # self.decoder_subs =  Decoder(subtitle_model_dimension,  dropout_percentage, number_of_heads, subtitle_feedforward_dimension,  subtitle_number_of_layers)
         # self.decoder_audio = Decoder(audio_model_dimension, dropout_percentage, number_of_heads, audio_feedforward_dimension, audio_number_of_layers)
-        # self.decoder_video = Decoder(video_model_dimension, dropout_percentage, number_of_heads, video_feedforward_dimension, video_number_of_layers)
+        self.decoder_video = Decoder(video_model_dimension, dropout_percentage, number_of_heads, video_feedforward_dimension, video_number_of_layers)
         
-        self.decoder_common = cd.CommonDecoder(video_model_dimension, dropout_percentage, number_of_heads, video_feedforward_dimension, video_number_of_layers, audio_model_dimension, subtitle_model_dimension)
+        # self.decoder_common = cd.CommonDecoder(video_model_dimension, dropout_percentage, number_of_heads, video_feedforward_dimension, video_number_of_layers, audio_model_dimension, subtitle_model_dimension)
 
         # late fusion
         # self.generator = Generator(
