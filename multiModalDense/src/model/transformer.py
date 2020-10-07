@@ -123,13 +123,13 @@ class MultiModalTransformer(nn.Module):
         
         # out_subs = self.decoder_subs(trg_subs, memory_subs, src_subs_mask, trg_mask)
         # out_audio = self.decoder_audio(trg_audio, memory_audio, src_mask, trg_mask)
-        # out_video = self.decoder_video(trg_video, memory_video, src_mask, trg_mask)
+        out_video = self.decoder_video(trg_video, memory_video, src_mask, trg_mask)
 
-        out_common_decoded = self.decoder_common(trg_video, memory_video, memory_audio, memory_subs, src_mask, trg_mask, src_subs_mask)
+        # out_common_decoded = self.decoder_common(trg_video, memory_video, memory_audio, memory_subs, src_mask, trg_mask, src_subs_mask)
         
         # generate
         # out = self.generator(out_subs, out_audio, out_video)
-        out = self.generator_common(out_common_decoded)
+        out = self.generator_common(out_video)
         return out
 
 class Identity(nn.Module):
