@@ -2,7 +2,8 @@ import torch.nn as nn
 from model.modelUtil import clone
 from model.multiheadedAttention import MultiheadedAttention
 from model.residualConnection import ResidualConnection
-from model.feedforward import PositionwiseFeedForward
+from model.feedforward import PositionwiseFeedForward, PositionwiseFeedForwardDecoder
+import torch
 
 class CommonDecoderLayer(nn.Module):
     """
@@ -21,12 +22,20 @@ class CommonDecoderLayer(nn.Module):
         """
 
         super(CommonDecoderLayer, self).__init__()
+        # self.self_att = MultiheadedAttention(model_dimension + audio_modal_dimension + subtitile_modal_dimension, number_of_heads)
+        # self.self_att_res_layer = ResidualConnection(model_dimension + audio_modal_dimension + subtitile_modal_dimension, dropout_percentage)
+
+        # self.enc_att = MultiheadedAttention(model_dimension + audio_modal_dimension + subtitile_modal_dimension, number_of_heads)
+        # self.enc_att_res_layer = ResidualConnection(model_dimension + audio_modal_dimension + subtitile_modal_dimension, dropout_percentage)
+
+        # self.feed_forward = PositionwiseFeedForward(model_dimension + audio_modal_dimension + subtitile_modal_dimension, feedforward_dimension)
+        # self.feed_forward_res_layer = ResidualConnection(model_dimension + audio_modal_dimension + subtitile_modal_dimension, dropout_percentage)
         self.res_layers = clone(ResidualConnection(model_dimension, dropout_percentage), 5)
         self.self_att = MultiheadedAttention(model_dimension, number_of_heads)
         self.video_enc_att = MultiheadedAttention(model_dimension, number_of_heads)
         self.audio_enc_att = MultiheadedAttention(model_dimension, number_of_heads)
         self.subtitle_enc_att = MultiheadedAttention(model_dimension, number_of_heads)
-        self.feed_forward = PositionwiseFeedForward(model_dimension, feedforward_dimension)
+        self.feed_forward = PositionwiseFeedForwardDecoder(model_dimension, feedforward_dimension, model_dimension + audio_modal_dimension + subtitile_modal_dimension)
         self.audio_linear = nn.Linear(audio_modal_dimension, model_dimension)
         self.subtitle_linear = nn.Linear(subtitile_modal_dimension, model_dimension)
         
@@ -46,6 +55,14 @@ class CommonDecoderLayer(nn.Module):
             Returns:
                 decoder output of shape (batch_size, sequence_length, model_dimension)
         """
+        # print(video_encoder_memory.size())
+        # print(audio_encoder_memory.size())
+        # print(subtitle_encoder_memory.size())
+        # combined_memory = torch.cat([video_encoder_memory, audio_encoder_memory, subtitle_encoder_memory], dim=-1)
+        # sublayer0 = lambda x: self.self_att(x, x, x, target_mask)
+        # sublayer1 = lambda x: self.self_att(x, combined_memory, combined_memory, source_mask)
+        # sublayer2 = self.feed_forward
+        
         sublayer0 = lambda x: self.self_att(x, x, x, target_mask) # Query, Key and Value are same for self-attention
         subtitle_modified_memory = self.subtitle_linear(subtitle_encoder_memory)
         sublayer1 = lambda x: self.subtitle_enc_att(x, subtitle_modified_memory, subtitle_modified_memory, subtitle_mask) # Query is decoder intermediate output, Key and Value are encoder-output for encoder-decoder attention
@@ -59,7 +76,10 @@ class CommonDecoderLayer(nn.Module):
         x = self.res_layers[2](x, sublayer2)
         x = self.res_layers[3](x, sublayer3)
         x = self.res_layers[4](x, sublayer4)
-        
+
+        # x = self.self_att_res_layer(x, sublayer0)
+        # x = self.enc_att_res_layer(x, sublayer1)
+        # x = self.feed_forward_res_layer(x, sublayer2)
         return x
     
 class CommonDecoder(nn.Module):

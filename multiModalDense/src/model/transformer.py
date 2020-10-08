@@ -50,27 +50,28 @@ class MultiModalTransformer(nn.Module):
             self.src_emb_audio = Identity()
             self.src_emb_video = Identity()
         
-        self.trg_emb_subs  = VocabularyEmbedder(caption_vocab_size, subtitle_model_dimension)
-        self.trg_emb_audio = VocabularyEmbedder(caption_vocab_size, audio_model_dimension)
+        # self.trg_emb_subs  = VocabularyEmbedder(caption_vocab_size, subtitle_model_dimension)
+        # self.trg_emb_audio = VocabularyEmbedder(caption_vocab_size, audio_model_dimension)
         self.trg_emb_video = VocabularyEmbedder(caption_vocab_size, video_model_dimension)
         self.pos_emb_subs  = PositionalEncoder(subtitle_model_dimension, dropout_percentage)
         self.pos_emb_audio = PositionalEncoder(audio_model_dimension, dropout_percentage)
         self.pos_emb_video = PositionalEncoder(video_model_dimension, dropout_percentage)
+        # self.dec_pos_emb_video = PositionalEncoder(video_model_dimension+audio_model_dimension+subtitle_model_dimension, dropout_percentage)
         self.encoder_subs =  Encoder(subtitle_model_dimension,  dropout_percentage, number_of_heads, subtitle_feedforward_dimension,  subtitle_number_of_layers)
         self.encoder_audio = Encoder(audio_model_dimension, dropout_percentage, number_of_heads, audio_feedforward_dimension, audio_number_of_layers)
         # self.encoder_video = Encoder(video_model_dimension, dropout_percentage, number_of_heads, video_feedforward_dimension, video_number_of_layers)
         self.encoder_video = ce.Encoder(video_model_dimension, subtitle_model_dimension, audio_model_dimension, dropout_percentage, number_of_heads, video_feedforward_dimension, video_number_of_layers)
         # self.decoder_subs =  Decoder(subtitle_model_dimension,  dropout_percentage, number_of_heads, subtitle_feedforward_dimension,  subtitle_number_of_layers)
         # self.decoder_audio = Decoder(audio_model_dimension, dropout_percentage, number_of_heads, audio_feedforward_dimension, audio_number_of_layers)
-        self.decoder_video = Decoder(video_model_dimension, dropout_percentage, number_of_heads, video_feedforward_dimension, video_number_of_layers)
+        # self.decoder_video = Decoder(video_model_dimension, dropout_percentage, number_of_heads, video_feedforward_dimension, video_number_of_layers)
         
-        # self.decoder_common = cd.CommonDecoder(video_model_dimension, dropout_percentage, number_of_heads, video_feedforward_dimension, video_number_of_layers, audio_model_dimension, subtitle_model_dimension)
+        self.decoder_common = cd.CommonDecoder(video_model_dimension, dropout_percentage, number_of_heads, video_feedforward_dimension, video_number_of_layers, audio_model_dimension, subtitle_model_dimension)
 
         # late fusion
         # self.generator = Generator(
         #     subtitle_model_dimension, audio_model_dimension, video_model_dimension, caption_vocab_size, dropout_percentage
         # )
-        self.generator_common = cg.CommonGenerator(video_model_dimension, caption_vocab_size, dropout_percentage)
+        self.generator_common = cg.CommonGenerator(subtitle_model_dimension + audio_model_dimension + video_model_dimension, caption_vocab_size, dropout_percentage)
         
         for p in self.parameters():
             if p.dim() > 1:
@@ -104,32 +105,33 @@ class MultiModalTransformer(nn.Module):
         src_audio = self.src_emb_audio(src_audio)
         src_video = self.src_emb_video(src_video)
         
-        trg_subs = self.trg_emb_subs(trg)
-        trg_audio = self.trg_emb_audio(trg)
+        # trg_subs = self.trg_emb_subs(trg)
+        # trg_audio = self.trg_emb_audio(trg)
         trg_video = self.trg_emb_video(trg)
         
         src_subs = self.pos_emb_subs(src_subs)
         src_audio = self.pos_emb_audio(src_audio)
         src_video = self.pos_emb_video(src_video)
         
-        trg_subs = self.pos_emb_subs(trg_subs)
-        trg_audio = self.pos_emb_audio(trg_audio)
+        # trg_subs = self.pos_emb_subs(trg_subs)
+        # trg_audio = self.pos_emb_audio(trg_audio)
         trg_video = self.pos_emb_video(trg_video)
         
         # encode and decode
         memory_subs = self.encoder_subs(src_subs, src_subs_mask)
         memory_audio = self.encoder_audio(src_audio, src_mask)
+        # memory_video = self.encoder_video(src_video, src_mask)
         memory_video = self.encoder_video(src_video, memory_subs, memory_audio, src_mask, src_subs_mask)
         
         # out_subs = self.decoder_subs(trg_subs, memory_subs, src_subs_mask, trg_mask)
         # out_audio = self.decoder_audio(trg_audio, memory_audio, src_mask, trg_mask)
-        out_video = self.decoder_video(trg_video, memory_video, src_mask, trg_mask)
+        # out_video = self.decoder_video(trg_video, memory_video, src_mask, trg_mask)
 
-        # out_common_decoded = self.decoder_common(trg_video, memory_video, memory_audio, memory_subs, src_mask, trg_mask, src_subs_mask)
+        out_common_decoded = self.decoder_common(trg_video, memory_video, memory_audio, memory_subs, src_mask, trg_mask, src_subs_mask)
         
         # generate
         # out = self.generator(out_subs, out_audio, out_video)
-        out = self.generator_common(out_video)
+        out = self.generator_common(out_common_decoded)
         return out
 
 class Identity(nn.Module):
