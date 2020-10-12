@@ -2,8 +2,8 @@ import os
 root_dir = os.path.dirname(__file__)
 # Config parameters
 USE_TPU = False
-CURRENT_EXPERIMENT_NAME = 'Eigth run'
-COMMENT = 'Single decoder and combined video encoder'
+CURRENT_EXPERIMENT_NAME = 'Ninth run'
+COMMENT = 'Video mixed encoder'
 USE_LINEAR_EMBEDDER = False # Try using False
 USE_CATEGORIES = False
 USE_SUBTITLES = True
