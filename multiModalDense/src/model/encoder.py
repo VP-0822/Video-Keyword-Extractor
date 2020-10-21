@@ -1,6 +1,7 @@
 import torch.nn as nn
 from model.modelUtil import clone
 from model.multiheadedAttention import MultiheadedAttention
+from model.attentionOnAttention import MultiheadedAttentionOnAttention
 from model.residualConnection import ResidualConnection
 from model.feedforward import PositionwiseFeedForward
 
@@ -8,7 +9,7 @@ class EncoderLayer(nn.Module):
     """
         Encoder Layer of the transformer model. Encoder Layer is used to encode Video, Audio and Subtitles inputs individually. 
     """
-    def __init__(self, model_dimension, dropout_percentage, number_of_heads, feedforward_dimension):
+    def __init__(self, model_dimension, dropout_percentage, number_of_heads, feedforward_dimension, use_aoa=False):
         """
             Creates 2 copies of ResidualConnection, multiheaded attention with number_of_heads heads and fully-connected layer of shape (model_dimension, feedforward_dimension)
             Args:
@@ -16,10 +17,15 @@ class EncoderLayer(nn.Module):
                 dropout_percentage: droupout percentage for residual connection
                 number_of_heads: number of heads for multiheaded attention
                 feedforward_dimension: units of feedforward layer. Generally 2048 units
+                use_aoa: flag to use Attention-on-Attention technique
         """
         super(EncoderLayer, self).__init__()
         self.res_layers = clone(ResidualConnection(model_dimension, dropout_percentage), 2)
         self.self_att = MultiheadedAttention(model_dimension, number_of_heads)
+        if use_aoa is True:
+            print('Using AoA')
+            del self.self_att
+            self.self_att = MultiheadedAttentionOnAttention(model_dimension, number_of_heads)
         self.feed_forward = PositionwiseFeedForward(model_dimension, feedforward_dimension)
         
     def forward(self, x, source_mask): # x - (B, seq_len, d_model) src_mask (B, 1, S)
@@ -52,7 +58,7 @@ class Encoder(nn.Module):
         and produces new output. Number of layers are derived from number_of_layers parameter. 
     """
     
-    def __init__(self, model_dimension, dropout_percentage, number_of_heads, feedforward_dimension, number_of_layers):
+    def __init__(self, model_dimension, dropout_percentage, number_of_heads, feedforward_dimension, number_of_layers, use_aoa=False):
         """
             Create EncoderLayer copy number_of_layers times.
             Args:
@@ -61,9 +67,10 @@ class Encoder(nn.Module):
                 number_of_heads: number of heads for multiheaded attention
                 feedforward_dimension: units of feedforward layer. Generally 2048 units
                 number_of_layers: Number of encoder layers
+                use_aoa: flag to use Attention-on-Attention technique
         """
         super(Encoder, self).__init__()
-        self.enc_layers = clone(EncoderLayer(model_dimension, dropout_percentage, number_of_heads, feedforward_dimension), number_of_layers)
+        self.enc_layers = clone(EncoderLayer(model_dimension, dropout_percentage, number_of_heads, feedforward_dimension, use_aoa), number_of_layers)
         
     def forward(self, x, source_mask):
         """

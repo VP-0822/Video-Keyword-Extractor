@@ -1,6 +1,7 @@
 import torch.nn as nn
 from model.modelUtil import clone
 from model.multiheadedAttention import MultiheadedAttention
+from model.attentionOnAttention import MultiheadedAttentionOnAttention
 from model.residualConnection import ResidualConnection
 from model.feedforward import PositionwiseFeedForward
 
@@ -8,7 +9,7 @@ class DecoderLayer(nn.Module):
     """
         Decoder Layer of the transformer model. Decoder Layer is used to decode encoded Video, Audio and Subtitles inputs individually into output tensors for generator module. 
     """
-    def __init__(self, model_dimension, dropout_percentage, number_of_heads, feedforward_dimension):
+    def __init__(self, model_dimension, dropout_percentage, number_of_heads, feedforward_dimension, use_aoa=False):
         """
             1. Creates 3 copies of ResidualConnection
             2. multiheaded attention with number_of_heads heads for self attention and encoder-decoder attention
@@ -18,12 +19,17 @@ class DecoderLayer(nn.Module):
                 dropout_percentage: droupout percentage for residual connection
                 number_of_heads: number of heads for multiheaded attention
                 feedforward_dimension: units of feedforward layer. Generally 2048 units
+                use_aoa: flag to use Attention-on-Attention technique
         """
 
         super(DecoderLayer, self).__init__()
         self.res_layers = clone(ResidualConnection(model_dimension, dropout_percentage), 3)
         self.self_att = MultiheadedAttention(model_dimension, number_of_heads)
         self.enc_att = MultiheadedAttention(model_dimension, number_of_heads)
+        if use_aoa is True:
+            print('Using encoder-decoder AoA')
+            del self.enc_att
+            self.enc_att = MultiheadedAttentionOnAttention(model_dimension, number_of_heads)
         self.feed_forward = PositionwiseFeedForward(model_dimension, feedforward_dimension)
         
     def forward(self, x, encoder_memory, source_mask, target_mask): # x, memory - (B, seq_len, d_model) src_mask (B, 1, S) trg_mask (B, S, S)
@@ -58,7 +64,7 @@ class Decoder(nn.Module):
         and produces new output. Number of layers are derived from number_of_layers parameter. 
     """
     
-    def __init__(self, model_dimension, dropout_percentage, number_of_heads, feedforward_dimension, number_of_layers):
+    def __init__(self, model_dimension, dropout_percentage, number_of_heads, feedforward_dimension, number_of_layers, use_aoa=False):
         """
             Create DecoderLayer copy number_of_layers times.
             Args:
@@ -67,9 +73,10 @@ class Decoder(nn.Module):
                 number_of_heads: number of heads for multiheaded attention
                 feedforward_dimension: units of feedforward layer. Generally 2048 units
                 number_of_layers: Number of encoder layers
+                use_aoa: flag to use Attention-on-Attention technique
         """
         super(Decoder, self).__init__()
-        self.dec_layers = clone(DecoderLayer(model_dimension, dropout_percentage, number_of_heads, feedforward_dimension), number_of_layers)
+        self.dec_layers = clone(DecoderLayer(model_dimension, dropout_percentage, number_of_heads, feedforward_dimension, use_aoa), number_of_layers)
         
     def forward(self, x, encoder_memory, source_mask, target_mask):
         """

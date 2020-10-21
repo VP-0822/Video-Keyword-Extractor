@@ -2,8 +2,8 @@ import os
 root_dir = os.path.dirname(__file__)
 # Config parameters
 USE_TPU = False
-CURRENT_EXPERIMENT_NAME = 'Third run'
-COMMENT = 'Removed average split'
+CURRENT_EXPERIMENT_NAME = 'Tenth Run'
+COMMENT = 'Attention on attention for video'
 USE_LINEAR_EMBEDDER = False # Try using False
 USE_CATEGORIES = False
 USE_SUBTITLES = True
@@ -29,7 +29,7 @@ ADAM_BEAT_2 = 0.98
 ADAM_EPS = 1e-8
 LEARNING_RATE = 1e-5
 STARTING_EPOCH = 0
-TOTAL_EPOCHS = 40
+TOTAL_EPOCHS = 50
 EARLY_STOP_EPOCH_NUMBERS = 51
 EPOCH_NUMBER_TO_START_EVALUATION = 50 #TODO: Set appropriate
 VIDEOS_TO_MONITOR = ['v_GGSY1Qvo990', 'v_bXdq2zI1Ms0', 'v_aLv03Fznf5A']
