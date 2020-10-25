@@ -53,11 +53,11 @@ class MultiModalTransformer(nn.Module):
         self.pos_emb_subs  = PositionalEncoder(subtitle_model_dimension, dropout_percentage)
         self.pos_emb_audio = PositionalEncoder(audio_model_dimension, dropout_percentage)
         self.pos_emb_video = PositionalEncoder(video_model_dimension, dropout_percentage)
-        self.encoder_subs =  Encoder(subtitle_model_dimension,  dropout_percentage, number_of_heads, subtitle_feedforward_dimension,  subtitle_number_of_layers)
-        self.encoder_audio = Encoder(audio_model_dimension, dropout_percentage, number_of_heads, audio_feedforward_dimension, audio_number_of_layers)
+        self.encoder_subs =  Encoder(subtitle_model_dimension,  dropout_percentage, number_of_heads, subtitle_feedforward_dimension,  subtitle_number_of_layers, use_aoa=True)
+        self.encoder_audio = Encoder(audio_model_dimension, dropout_percentage, number_of_heads, audio_feedforward_dimension, audio_number_of_layers, use_aoa=True)
         self.encoder_video = Encoder(video_model_dimension, dropout_percentage, number_of_heads, video_feedforward_dimension, video_number_of_layers, use_aoa=True)
-        self.decoder_subs =  Decoder(subtitle_model_dimension,  dropout_percentage, number_of_heads, subtitle_feedforward_dimension,  subtitle_number_of_layers)
-        self.decoder_audio = Decoder(audio_model_dimension, dropout_percentage, number_of_heads, audio_feedforward_dimension, audio_number_of_layers)
+        self.decoder_subs =  Decoder(subtitle_model_dimension,  dropout_percentage, number_of_heads, subtitle_feedforward_dimension,  subtitle_number_of_layers, use_aoa=True)
+        self.decoder_audio = Decoder(audio_model_dimension, dropout_percentage, number_of_heads, audio_feedforward_dimension, audio_number_of_layers, use_aoa=True)
         self.decoder_video = Decoder(video_model_dimension, dropout_percentage, number_of_heads, video_feedforward_dimension, video_number_of_layers, use_aoa=True)
         
         # late fusion

@@ -2,8 +2,8 @@ import os
 root_dir = os.path.dirname(__file__)
 # Config parameters
 USE_TPU = False
-CURRENT_EXPERIMENT_NAME = 'Tenth Run'
-COMMENT = 'Attention on attention for video'
+CURRENT_EXPERIMENT_NAME = 'Eleventh Run'
+COMMENT = 'Attention on attention for video (Inc. Self-Attention at decoder)'
 USE_LINEAR_EMBEDDER = False # Try using False
 USE_CATEGORIES = False
 USE_SUBTITLES = True
@@ -30,8 +30,8 @@ ADAM_EPS = 1e-8
 LEARNING_RATE = 1e-5
 STARTING_EPOCH = 0
 TOTAL_EPOCHS = 50
-EARLY_STOP_EPOCH_NUMBERS = 51
-EPOCH_NUMBER_TO_START_EVALUATION = 50 #TODO: Set appropriate
+EARLY_STOP_EPOCH_NUMBERS = 21
+EPOCH_NUMBER_TO_START_EVALUATION = 20 #TODO: Set appropriate
 VIDEOS_TO_MONITOR = ['v_GGSY1Qvo990', 'v_bXdq2zI1Ms0', 'v_aLv03Fznf5A']
 tIoUs_FOR_EVALUATION_METRIC = [0.5] # [0.3, 0.5, 0.7, 0.9]
 CONTINUE_TRAINING = False

@@ -25,6 +25,10 @@ class DecoderLayer(nn.Module):
         super(DecoderLayer, self).__init__()
         self.res_layers = clone(ResidualConnection(model_dimension, dropout_percentage), 3)
         self.self_att = MultiheadedAttention(model_dimension, number_of_heads)
+        if use_aoa is True:
+            print('Using self-decoder AoA')
+            del self.self_att
+            self.self_att = MultiheadedAttentionOnAttention(model_dimension, number_of_heads)
         self.enc_att = MultiheadedAttention(model_dimension, number_of_heads)
         if use_aoa is True:
             print('Using encoder-decoder AoA')
